@@ -1,6 +1,36 @@
 # simple-cv
 
-Node.js bindings for OpenCV with a simple promise-based async API, good documentation and excellent tests.
+Node.js bindings for OpenCV with a simple promise based async API, good documentation and excellent tests.
+
+`simple-cv` replicates the good parts of the OpenCV API, but replaces the really crappy ones with something
+better. For example instead of a `flip` method that takes a number literal -1, 0 or 1 to indicate flip direction
+`simple-cv` has `flipLeftRight` and `flipUpDown` methods. 
+
+All heavy operations are performed in a worker thread pool and the results a returned back asynchronously using 
+promises.
+ 
+The documentation is full of examples, but here's one to get you started.
+
+```js
+const cv = require('simple-cv');
+
+const example = async () => {
+  let image = await cv.readImage('/path/to/some/image.png');
+  
+  image = await cv.rotate(image, 20);
+  image = await cv.resize(image, {scale: 0.5});
+  
+  return image;
+};
+
+example().then(image => {
+  cv.showImage("example", image);
+  cv.waitKey();
+});
+```
+
+This project is a work is still in its infancy and only a small part of the OpenCV API is wrapped. 
+More stuff is added all the time.
 
 <br/>
 
@@ -41,24 +71,6 @@ figure-out yourself || install ubuntu || buy mac
 
 # API documentation
 
-The API documentation assumes you have imported the `simple-cv` main module like this:
-
-```js
-const cv = require('simple-cv');
-```
-
-Destructuring works also off course:
-
-```js
-const {Matrix, ImageType, rotate} = require('simple-cv');
-```
-
-<br/><br/><br/>
-
-
-
-
-
 ## Matrix
 
 The basic data type used to represent images, transformation matrices etc. Wraps an instance of OpenCV `Mat`.
@@ -69,7 +81,7 @@ The basic data type used to represent images, transformation matrices etc. Wraps
 
 <br/>
 
-#### cv.Matrix(number, number, type)
+#### cv.Matrix(width, height, type)
 
 | argument | type                      | description
 | -------- | ------------------------- | --------------------------
@@ -130,7 +142,7 @@ Cuts a rectangular piece of the matrix and returns it as a new matrix. The origi
 
 | argument | type                      | description
 | -------- | ------------------------- | ------------------------------------
-| rect     | [`Rectangle´](#rectangle) | The rectangle to crop.
+| rect     | [`Rectangle`](#rectangle) | The rectangle to crop.
 
 | return value | type                | description
 | ------------ | ------------------- | --------------------------------------
@@ -138,6 +150,44 @@ Cuts a rectangular piece of the matrix and returns it as a new matrix. The origi
 
 ```js
 const cropped = matrix.crop({x: 10, y: 10, width: 10, height: 10});
+```
+
+<br/>
+
+#### matrix = matrix.set(source, point)
+
+Copies the values of a matrix to another matrix.
+
+| argument | type                | description
+| -------- | --------------------| ------------------------------------
+| source   | [`Matrix`](#matrix) | The source matrix
+| point    | [`Point`](#point)   | Where to copy the values in the target matrix
+
+| return value | type                | description
+| ------------ | ------------------- | --------------------------------------
+| matrix       | [`Matrix`](#matrix) | The target matrix.
+
+```js
+const source = cv.matrix([
+  [2, 3],
+  [4, 5]
+]);
+
+const target = cv.matrix([
+  [1, 1, 1, 1],
+  [1, 1, 1, 1],
+  [1, 1, 1, 1],
+  [1, 1, 1, 1]
+])
+
+target.set(source, {x: 1, y: 2});
+
+// target is now:
+//
+// [1, 1, 1, 1],
+// [1, 1, 1, 1],
+// [1, 2, 3, 1],
+// [1, 4, 5, 1]
 ```
 
 <br/>
@@ -291,6 +341,66 @@ for debugging and testing with `showImage`.
 ```js
 // Wait forever.
 const key = cv.waitKey(0);
+```
+
+<br/>
+
+### promise = cv.resize(matrix, resizeParams)
+
+High quality image resize.
+
+| argument     | type                                      | description
+| ------------ | ----------------------------------------- | ------------------------------------
+| matrix       | [`Matrix`](#matrix)                       | The matrix to resize
+| resizeParams | [`ResizeParams`](#resizeparams) or number | The resize parameters or a number. If a number is given it will become the width of the image while keeping the aspect ratio. See [`ResizeParams`](#resizeparams) for other options.
+
+| return value | type            | description
+| ------------ | --------------- | --------------------------------------
+| promise      | Promise<Matrix> | The resized image
+
+```js
+// Resize the image to have width 400 while preserving aspect ratio.
+let resized = await cv.resize(image, 400);
+
+// This does exactly the same as the previous example.
+resized = await cv.resize(image, {width: 400});
+
+// Resize the image to have height 400 while preserving aspect ratio.
+resized = await cv.resize(image, {height: 400});
+
+// Resize the image half the width and height.
+resized = await cv.resize(image, {scale: 0.5});
+
+// Resize the image to 320x200
+resized = await cv.resize(image, {width: 320, height: 200});
+
+// Create a truly weird image.
+resized = await cv.resize(image, {xScale: 0.5, yScale: 20.0});
+```
+
+<br/>
+
+### promise = cv.warpAffine(matrix, transformation, options)
+
+Applies an affine transformation to a matrix.
+
+| argument       | type                        | description
+| -------------- | ----------------------------| ------------------------------------
+| matrix         | [`Matrix`](#matrix)         | The matrix to transform
+| transformation | [`Matrix`](#matrix)         | A 3x2 affine transformation matrix
+| options        | [`WarpParams`](#warpparams) | Optional extra options. See [`WarpParams`](warpparams)
+
+| return value | type                 | description
+| ------------ | -------------------- | --------------------------------------
+| promise      | [`Matrix`](#matrix)  | The transformed image
+
+```js
+const transpose = cv.matrix([
+  [0, 1, 0],
+  [1, 0, 0]
+]);
+
+const transposed = await cv.warpAffine(image, transpose);
 ```
 
 <br/><br/><br/>
@@ -447,3 +557,41 @@ const channelData = {
   channel: cv.Channel.Gray
 };
 ```
+
+
+<br/>
+
+### ResizeParams
+
+| property | type   | description
+| -------- | ------ | --------------------------
+| width    | number | wanted result width
+| height   | number | wanted result height
+| scale    | number | size multiplier
+| xScale   | number | width multiplier
+| yScale   | number | height multiplier
+
+```js
+let resizeParams = {
+  width: 200,
+  height: 300
+};
+
+resizeParams = {
+  scale: 2
+};
+
+resizeParams = {
+  xScale: 0.5,
+  yScale: 1.5
+};
+```
+
+<br/>
+
+### WarpParams
+
+| property    | type                        | description
+| ----------- | --------------------------- | --------------------------
+| borderType  | [`BorderType`](#bordertype) | How to fill the empty space the transformation causes
+| borderValue | number                      | The constant value for `BorderType.Constant`

@@ -1,6 +1,6 @@
 {
   "name": "simple-cv",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Node.js bindings for OpenCV with a simple promise-based async API, good documentation and excellent tests.",
   "main": "index.js",
   "scripts": {

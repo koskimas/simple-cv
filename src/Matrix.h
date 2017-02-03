@@ -6,6 +6,7 @@
 #include <opencv2/opencv.hpp>
 #include "constants.h"
 #include "utils.h"
+#include "async.h"
 
 class Matrix : public Nan::ObjectWrap {
 
@@ -443,8 +444,8 @@ private:
   static NAN_METHOD(set) {
     cv::Mat self = Nan::ObjectWrap::Unwrap<Matrix>(info.Holder())->mat();
 
-    if (info.Length() != 2) {
-      Nan::ThrowError("expected two arguments (matrix, point)");
+    if (info.Length() != 3) {
+      Nan::ThrowError("expected three arguments (matrix, point, callback)");
       return;
     }
 
@@ -465,6 +466,11 @@ private:
       return;
     }
 
+    if (!info[2]->IsFunction()) {
+      Nan::ThrowError("second argument (callback) must be a function");
+      return;
+    }
+
     auto point = getPoint<int>(info[1]);
     auto x = point.x;
     auto y = point.y;
@@ -478,30 +484,33 @@ private:
       return;
     }
 
-    try {
+    asyncOp(info[2].As<v8::Function>(), [self, mat, x, y, w, h]() {
       mat.copyTo(self(cv::Rect(x, y, w, h)));
-    } catch (std::exception& err) {
-      Nan::ThrowError(err.what());
-    }
+    });
   }
 
   static NAN_METHOD(crop) {
-    Matrix* mat = Nan::ObjectWrap::Unwrap<Matrix>(info.Holder());
+    cv::Mat self = Nan::ObjectWrap::Unwrap<Matrix>(info.Holder())->mat();
 
-    if (info.Length() < 1) {
-      Nan::ThrowError("first argument must be a rectangle: {x, y, width, height}");
+    if (info.Length() != 2) {
+      Nan::ThrowError("expected two arguments (rect, callback)");
       return;
     }
 
     auto rect = info[0];
 
     if (!isRect(rect)) {
-      Nan::ThrowError("first argument must be a rectangle: {x, y, width, height}");
+      Nan::ThrowError("first argument (rect) must be a rectangle: {x, y, width, height}");
       return;
     }
 
-    int matWidth = mat->mat().size().width;
-    int matHeight = mat->mat().size().height;
+    if (!info[1]->IsFunction()) {
+      Nan::ThrowError("second argument (callback) must be a function");
+      return;
+    }
+
+    int matWidth = self.size().width;
+    int matHeight = self.size().height;
 
     auto cropRect = getRect<int>(rect);
     auto x = cropRect.x;
@@ -516,13 +525,11 @@ private:
       return;
     }
 
-    try {
-      cv::Mat cropped = mat->mat()(cropRect).clone();
-      info.GetReturnValue().Set(Matrix::create(cropped));
-    } catch (std::exception& err) {
-      Nan::ThrowError(err.what());
-      return;
-    }
+    asyncOp<cv::Mat>(info[1].As<v8::Function>(), [self, cropRect]() {
+      return self(cropRect).clone();
+    }, [](const cv::Mat& result) {
+      return Matrix::create(result);
+    });
   }
 
   static inline Nan::Persistent<v8::Function>& constructor() {

@@ -3,7 +3,6 @@
 
 #include <nan.h>
 #include <opencv2/opencv.hpp>
-#include "Matrix.h"
 
 template<typename T>
 class AsyncOp : public Nan::AsyncWorker {
@@ -49,18 +48,6 @@ private:
   T output;
 
 };
-
-inline void asyncImageOp(v8::Local<v8::Function> callback, std::function<cv::Mat(void)> worker) {
-  Nan::HandleScope scope;
-
-  Nan::AsyncQueueWorker(new AsyncOp<cv::Mat>(
-      worker,
-      [](const cv::Mat& mat) {
-        return Matrix::create(mat);
-      },
-      new Nan::Callback(callback)
-  ));
-}
 
 inline void asyncOp(v8::Local<v8::Function> callback, std::function<void(void)> worker) {
   Nan::HandleScope scope;

@@ -51,7 +51,7 @@ NAN_METHOD(readImage) {
   std::string filePath(v8::String::Utf8Value(info[0]->ToString()).operator*());
   v8::Local<v8::Function> callback = (info.Length() == 2 ? info[1] : info[2]).As<v8::Function>();
 
-  asyncImageOp(callback, [filePath, readType]() {
+  asyncOp<cv::Mat>(callback, [filePath, readType]() {
     auto image = cv::imread(filePath, readType);
 
     if (image.empty()) {
@@ -59,6 +59,8 @@ NAN_METHOD(readImage) {
     }
 
     return image;
+  }, [](const cv::Mat& result) {
+    return Matrix::create(result);
   });
 }
 

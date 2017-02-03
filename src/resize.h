@@ -98,7 +98,7 @@ NAN_METHOD(resize) {
     return;
   }
 
-  asyncImageOp(info[2].As<v8::Function>(), [size, image]() {
+  asyncOp<cv::Mat>(info[2].As<v8::Function>(), [size, image]() {
     cv::Mat output = image.clone();
 
     if (image.empty()) {
@@ -120,6 +120,8 @@ NAN_METHOD(resize) {
     }
 
     return output;
+  }, [](const cv::Mat& result) {
+    return Matrix::create(result);
   });
 }
 

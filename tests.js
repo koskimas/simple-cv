@@ -180,8 +180,13 @@ describe('simple-cv', () => {
           [7, 8, 9]
         ]);
 
-        expect(matrix.crop({x: 0, y: 0, width: 2, height: 3}).toArray()).to.eql([1, 2, 4, 5, 7, 8]);
-        expect(matrix.crop({x: 1, y: 2, width: 2, height: 1}).toArray()).to.eql([8, 9]);
+        return Promise.all([
+          matrix.crop({x: 0, y: 0, width: 2, height: 3}),
+          matrix.crop({x: 1, y: 2, width: 2, height: 1})
+        ]).then(([res1, res2]) => {
+          expect(res1.toArray()).to.eql([1, 2, 4, 5, 7, 8]);
+          expect(res2.toArray()).to.eql([8, 9]);
+        })
       });
 
       it('should fail gracefully if crop goes out of borders', () => {
@@ -191,21 +196,17 @@ describe('simple-cv', () => {
           [7, 8, 9]
         ]);
 
-        expect(() => {
-          matrix.crop({x: 10, y: 1, width: 2, height: 2});
-        }).to.throwException(err => {
-          expect(err.message).to.equal('crop (x=10..12, y=1..3) goes outside the matrix bounds (w=3, h=3)');
+        return Promise.all([
+          matrix.crop({x: 10, y: 1, width: 2, height: 2}).catch(err => err),
+          matrix.crop({x: 0, y: 0, width: 4, height: 4}).catch(err => err),
+          matrix.crop({x: 0, y: 0, width: 3, height: 3})
+        ]).then(([err1, err2, image]) => {
+          expect(err1).to.be.an(Error);
+          expect(err2).to.be.an(Error);
+          expect(err1.message).to.equal('crop (x=10..12, y=1..3) goes outside the matrix bounds (w=3, h=3)');
+          expect(err2.message).to.equal('crop (x=0..4, y=0..4) goes outside the matrix bounds (w=3, h=3)');
+          expect(image).to.be.a(cv.Matrix);
         });
-
-        expect(() => {
-          matrix.crop({x: 0, y: 0, width: 4, height: 4});
-        }).to.throwException(err => {
-          expect(err.message).to.equal('crop (x=0..4, y=0..4) goes outside the matrix bounds (w=3, h=3)');
-        });
-
-        expect(() => {
-          matrix.crop({x: 0, y: 0, width: 3, height: 3});
-        }).to.not.throwException();
       });
 
     });
@@ -224,29 +225,32 @@ describe('simple-cv', () => {
           [33, 44],
         ]);
 
-        target.set(source, {x: 1, y: 0});
-        expect(target.toArray()).to.eql([
-          1, 11, 22,
-          4, 33, 44,
-          7, 8,  9
-        ]);
+        return target.set(source, {x: 1, y: 0}).then(target => {
+          expect(target.toArray()).to.eql([
+            1, 11, 22,
+            4, 33, 44,
+            7, 8,  9
+          ]);
 
-        target.set(source, {x: 0, y: 1});
-        expect(target.toArray()).to.eql([
-          1,  11, 22,
-          11, 22, 44,
-          33, 44,  9
-        ]);
+          return target.set(source, {x: 0, y: 1});
+        }).then(target => {
+          expect(target.toArray()).to.eql([
+            1,  11, 22,
+            11, 22, 44,
+            33, 44,  9
+          ]);
 
-        target.set(source, {x: 1, y: 1});
-        expect(target.toArray()).to.eql([
-          1,  11, 22,
-          11, 11, 22,
-          33, 33, 44
-        ]);
+          return target.set(source, {x: 1, y: 1});
+        }).then(target => {
+          expect(target.toArray()).to.eql([
+            1,  11, 22,
+            11, 11, 22,
+            33, 33, 44
+          ]);
+        });
       });
 
-      it('should fail gracefully if the set goes out of borders', () => {
+      it('should fail gracefully if the set goes out of borders', (done) => {
         const target = new cv.Matrix([
           [1, 2, 3],
           [4, 5, 6],
@@ -258,11 +262,12 @@ describe('simple-cv', () => {
           [33, 44],
         ]);
 
-        expect(() => {
-          target.set(source, {x: 2, y: 2});
-        }).to.throwException(err => {
+        target.set(source, {x: 2, y: 2}).then(() => {
+          done(new Error('should not get here'));
+        }).catch(err => {
           expect(err.message).to.equal('set (x=2..4, y=2..4) goes outside the matrix bounds (w=3, h=3)');
-        });
+          done();
+        }).catch(done);
       });
 
     });

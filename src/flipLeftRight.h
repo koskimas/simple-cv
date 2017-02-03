@@ -22,10 +22,12 @@ NAN_METHOD(flipLeftRight) {
     return;
   }
 
-  asyncImageOp(info[1].As<v8::Function>(), [image]() {
+  asyncOp<cv::Mat>(info[1].As<v8::Function>(), [image]() {
     cv::Mat output;
     cv::flip(image, output, 1);
     return output;
+  }, [](const cv::Mat& result) {
+    return Matrix::create(result);
   });
 }
 

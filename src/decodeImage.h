@@ -53,7 +53,7 @@ NAN_METHOD(decodeimage) {
   std::vector<uchar> data(bytes, bytes + size);
   v8::Local<v8::Function> callback = (info.Length() == 2 ? info[1] : info[2]).As<v8::Function>();
 
-  asyncImageOp(callback, [data, decodeType]() {
+  asyncOp<cv::Mat>(callback, [data, decodeType]() {
     auto image = cv::imdecode(data, decodeType);
 
     if (image.empty()) {
@@ -61,6 +61,8 @@ NAN_METHOD(decodeimage) {
     }
 
     return image;
+  }, [](const cv::Mat& result) {
+    return Matrix::create(result);
   });
 }
 

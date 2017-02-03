@@ -136,7 +136,7 @@ const array = matrix.toArray();
 
 <br/>
 
-#### matrix = matrix.crop(rect)
+#### promise = matrix.crop(rect)
 
 Cuts a rectangular piece of the matrix and returns it as a new matrix. The original matrix is not modified.
 
@@ -144,17 +144,17 @@ Cuts a rectangular piece of the matrix and returns it as a new matrix. The origi
 | -------- | ------------------------- | ------------------------------------
 | rect     | [`Rectangle`](#rectangle) | The rectangle to crop.
 
-| return value | type                | description
-| ------------ | ------------------- | --------------------------------------
-| matrix       | [`Matrix`](#matrix) | The cropped matrix.
+| return value | type                         | description
+| ------------ | ---------------------------- | --------------------------------------
+| promise      | Promise<[`Matrix`](#matrix)> | The cropped matrix.
 
 ```js
-const cropped = matrix.crop({x: 10, y: 10, width: 10, height: 10});
+const cropped = await matrix.crop({x: 10, y: 10, width: 10, height: 10});
 ```
 
 <br/>
 
-#### matrix = matrix.set(source, point)
+#### promise = matrix.set(source, point)
 
 Copies the values of a matrix to another matrix.
 
@@ -163,9 +163,9 @@ Copies the values of a matrix to another matrix.
 | source   | [`Matrix`](#matrix) | The source matrix
 | point    | [`Point`](#point)   | Where to copy the values in the target matrix
 
-| return value | type                | description
-| ------------ | ------------------- | --------------------------------------
-| matrix       | [`Matrix`](#matrix) | The target matrix.
+| return value | type                         | description
+| ------------ | -----------------------------| --------------------------------------
+| promise      | Promise<[`Matrix`](#matrix)> | The target matrix.
 
 ```js
 const source = cv.matrix([
@@ -180,7 +180,7 @@ const target = cv.matrix([
   [1, 1, 1, 1]
 ])
 
-target.set(source, {x: 1, y: 2});
+await target.set(source, {x: 1, y: 2});
 
 // target is now:
 //

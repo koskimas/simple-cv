@@ -53,25 +53,40 @@ class Matrix {
     return this._native.type;
   }
 
+  crop(rect) {
+    return new Promise((resolve, reject) => {
+      this._native.crop(rect, (err, matrix) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(new Matrix(matrix));
+        }
+      });
+    });
+  }
+
+  set(matrix, point) {
+    return new Promise((resolve, reject) => {
+      this._native.set(matrix && matrix._native, point, (err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(this);
+        }
+      });
+    });
+  }
+
+  toString() {
+    return JSON.stringify(this);
+  }
+
   toArray() {
     return this._native.toArray();
   }
 
   toBuffers() {
     return this._native.toBuffers();
-  }
-
-  crop(...args) {
-    return new Matrix(this._native.crop(...args));
-  }
-
-  set(matrix, point) {
-    this._native.set(matrix && matrix._native, point);
-    return this;
-  }
-
-  toString() {
-    return JSON.stringify(this);
   }
 
   toJSON() {

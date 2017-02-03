@@ -82,10 +82,12 @@ NAN_METHOD(warpAffine) {
     callback = info[2].As<v8::Function>();
   }
 
-  asyncImageOp(callback, [image, trans, borderType, borderValue]() {
+  asyncOp<cv::Mat>(callback, [image, trans, borderType, borderValue]() {
     cv::Mat output;
     cv::warpAffine(image, output, trans, image.size(), CV_INTER_CUBIC, borderType, borderValue);
     return output;
+  }, [](const cv::Mat& result) {
+    return Matrix::create(result);
   });
 }
 

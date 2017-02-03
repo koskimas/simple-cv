@@ -1,8 +1,8 @@
 # simple-cv
 
-Node.js bindings for OpenCV with a simple promise based async API, good documentation and excellent tests.
+Asynchronous [Node.js](https://nodejs.org/en/) bindings for [OpenCV](http://opencv.org/) with a simple promise based API and excellent documentation.
 
-`simple-cv` replicates the good parts of the OpenCV API, but replaces the really crappy ones with something
+`simple-cv` replicates the good parts of the OpenCV API but replaces the really crappy ones with something
 better. For example instead of a `flip` method that takes a number literal -1, 0 or 1 to indicate flip direction
 `simple-cv` has `flipLeftRight` and `flipUpDown` methods. 
 
@@ -18,7 +18,7 @@ const example = async () => {
   let image = await cv.readImage('/path/to/some/image.png');
   
   image = await cv.rotate(image, 20);
-  image = await cv.resize(image, {scale: 0.5});
+  image = await cv.resize(image, {width: 400});
   
   return image;
 };

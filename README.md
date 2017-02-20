@@ -445,6 +445,64 @@ const transpose = cv.matrix([
 const transposed = await cv.warpAffine(image, transpose);
 ```
 
+<br/>
+
+### promise = cv.rotate(matrix, opt)
+
+Rotates the image around a point.
+
+| argument       | type                                      | description
+| -------------- | ----------------------------------------- | ------------------------------------
+| matrix         | [`Matrix`](#matrix)                       | The matrix to flip
+| opt            | [`RotateParams`](#rotateparams) or number | The rotation angle as degrees or options object. See [`RotateParams`](#rotateparams)
+
+| return value | type                 | description
+| ------------ | -------------------- | --------------------------------------
+| promise      | [`Matrix`](#matrix)  | The rotated matrix
+
+```js
+// Rotate 20 degrees around the center of the image.
+let rotated = await cv.rotate(image, 20);
+// Rotate 30 degrees around point (10, 20)
+rotated = await cv.rotate(image, {x: 10, y: 20, angle: 30});
+```
+
+<br/>
+
+### promise = cv.flipLeftRight(matrix)
+
+Flips the matrix around the y-axis.
+
+| argument       | type                | description
+| -------------- | --------------------| ------------------------------------
+| matrix         | [`Matrix`](#matrix) | The matrix to flip
+
+| return value | type                 | description
+| ------------ | -------------------- | --------------------------------------
+| promise      | [`Matrix`](#matrix)  | The flipped matrix
+
+```js
+const flipped = await cv.flipLeftRight(image);
+```
+
+<br/>
+
+### promise = cv.flipUpDown(matrix)
+
+Flips the matrix around the x-axis.
+
+| argument       | type                | description
+| -------------- | --------------------| ------------------------------------
+| matrix         | [`Matrix`](#matrix) | The matrix to flip
+
+| return value | type                 | description
+| ------------ | -------------------- | --------------------------------------
+| promise      | [`Matrix`](#matrix)  | The flipped matrix
+
+```js
+const flipped = await cv.flipUpDown(image);
+```
+
 <br/><br/><br/>
 
 ## Enums
@@ -636,4 +694,15 @@ resizeParams = {
 | property    | type                        | description
 | ----------- | --------------------------- | --------------------------
 | borderType  | [`BorderType`](#bordertype) | How to fill the empty space the transformation causes
+| borderValue | number                      | The constant value for `BorderType.Constant`
+
+<br/>
+
+### RotateParams
+
+| property    | type                        | description
+| ----------- | --------------------------- | --------------------------
+| x           | number                      | The x-coordinate if the point around which the image will be rotated
+| y           | number                      | The y-coordinate if the point around which the image will be rotated
+| borderType  | [`BorderType`](#bordertype) | How to fill the empty space the rotation causes
 | borderValue | number                      | The constant value for `BorderType.Constant`

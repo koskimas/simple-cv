@@ -258,16 +258,20 @@ function flipLeftRightSync(image) {
 
 function rotate(image, opt) {
   return new Promise((resolve, reject) => {
-    warpAffine(image, rotateShared(image, opt)).then(resolve).catch(reject);
+    const {transformation, warpOptions} = rotateShared(image, opt);
+    warpAffine(image, transformation, warpOptions).then(resolve).catch(reject);
   });
 }
 
 function rotateSync(image, opt) {
-  return warpAffineSync(image, rotateShared(image, opt));
+  const {transformation, warpOptions} = rotateShared(image, opt);
+  return warpAffineSync(image, transformation, warpOptions);
 }
 
 function rotateShared(image, opt) {
   let rot;
+  let warpOpt = {};
+
   let imageCenter = {
     x: Math.floor(image.width / 2),
     y: Math.floor(image.height / 2)
@@ -288,7 +292,10 @@ function rotateShared(image, opt) {
     throw new Error('second argument (angle) must be a number or an object {xCenter?, yCenter?, angle}');
   }
 
-  return rot;
+  return {
+    transformation: rot,
+    warpOptions: warpOpt
+  };
 }
 
 module.exports = {

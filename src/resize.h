@@ -9,8 +9,8 @@
 NAN_METHOD(resize) {
   cv::Size size;
 
-  if (info.Length() != 3) {
-    Nan::ThrowError("expected three arguments (image, sizeSpec, callback)");
+  if (info.Length() < 2 || info.Length() > 3) {
+    Nan::ThrowError("expected at least two argument (image, sizeSpec) and at most three arguments (image, sizeSpec, callback)");
     return;
   }
 
@@ -98,7 +98,12 @@ NAN_METHOD(resize) {
     return;
   }
 
-  asyncOp<cv::Mat>(info[2].As<v8::Function>(), [size, image]() {
+  if (info.Length() == 3 && !info[2]->IsFunction()) {
+    Nan::ThrowError("third argument (callback) must be a function");
+    return;
+  }
+
+  maybeAsyncOp<cv::Mat>(info, [size, image]() {
     cv::Mat output = image.clone();
 
     if (image.empty()) {
@@ -125,4 +130,4 @@ NAN_METHOD(resize) {
   });
 }
 
-#endif //SIMPLE_CV_RESIZE_H
+#endif // SIMPLE_CV_RESIZE_H

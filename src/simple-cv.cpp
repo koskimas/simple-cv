@@ -16,7 +16,7 @@ NAN_MODULE_INIT(Init) {
   Matrix::init(target);
 
   Nan::SetMethod(target, "readImage", readImage);
-  Nan::SetMethod(target, "decodeImage", decodeimage);
+  Nan::SetMethod(target, "decodeImage", decodeImage);
   Nan::SetMethod(target, "writeImage", writeImage);
   Nan::SetMethod(target, "encodeImage", encodeImage);
   Nan::SetMethod(target, "showImage", showImage);

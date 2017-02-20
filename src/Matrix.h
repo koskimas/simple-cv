@@ -265,13 +265,13 @@ private:
 
       if (info.Length() > 2) {
         if (!info[2]->IsInt32()) {
-          Nan::ThrowError("the third argument (type) must be one of [cv.ImageType.Gray, cv.ImageType.BGR, cv.ImageType.Float]");
+          Nan::ThrowError("the third argument (type) must be one of [cv.ImageType.Gray, cv.ImageType.BGR, cv.ImageType.BGRA, cv.ImageType.Float]");
           return;
         }
 
         type = Nan::To<int>(info[2]).FromJust();
 
-        if (type != ImageTypeGray && type != ImageTypeBGR && type != ImageTypeFloat) {
+        if (type != ImageTypeGray && type != ImageTypeBGR && type != ImageTypeBGRA && type != ImageTypeFloat) {
           Nan::ThrowError("the third argument (type) must be one of [cv.ImageType.Gray, cv.ImageType.BGR, cv.ImageType.Float]");
           return;
         }
@@ -344,7 +344,7 @@ private:
 
         ret = arr;
       } else if (self.type() == ImageTypeFloat) {
-        auto buffer = Nan::CopyBuffer(data, size).ToLocalChecked();
+        auto buffer = Nan::CopyBuffer(data, size * sizeof(double)).ToLocalChecked();
         auto obj = Nan::New<v8::Object>();
         auto arr = Nan::New<v8::Array>(1);
 
@@ -444,8 +444,8 @@ private:
   static NAN_METHOD(set) {
     cv::Mat self = Nan::ObjectWrap::Unwrap<Matrix>(info.Holder())->mat();
 
-    if (info.Length() != 3) {
-      Nan::ThrowError("expected three arguments (matrix, point, callback)");
+    if (info.Length() < 2 || info.Length() > 3) {
+      Nan::ThrowError("expected at least two argument (matrix, point) and at most three arguments (matrix, point, callback)");
       return;
     }
 
@@ -466,8 +466,8 @@ private:
       return;
     }
 
-    if (!info[2]->IsFunction()) {
-      Nan::ThrowError("second argument (callback) must be a function");
+    if (info.Length() == 3 && !info[2]->IsFunction()) {
+      Nan::ThrowError("third argument (callback) must be a function");
       return;
     }
 
@@ -484,16 +484,19 @@ private:
       return;
     }
 
-    asyncOp(info[2].As<v8::Function>(), [self, mat, x, y, w, h]() {
+    maybeAsyncOp<int>(info, [self, mat, x, y, w, h]() {
       mat.copyTo(self(cv::Rect(x, y, w, h)));
+      return 0;
+    }, [](const int&) {
+      return Nan::Null();
     });
   }
 
   static NAN_METHOD(crop) {
     cv::Mat self = Nan::ObjectWrap::Unwrap<Matrix>(info.Holder())->mat();
 
-    if (info.Length() != 2) {
-      Nan::ThrowError("expected two arguments (rect, callback)");
+    if (info.Length() < 1 || info.Length() > 2) {
+      Nan::ThrowError("expected at least one argument (rect) and at most two arguments (rect, callback)");
       return;
     }
 
@@ -504,7 +507,7 @@ private:
       return;
     }
 
-    if (!info[1]->IsFunction()) {
+    if (info.Length() == 2 && !info[1]->IsFunction()) {
       Nan::ThrowError("second argument (callback) must be a function");
       return;
     }
@@ -525,7 +528,7 @@ private:
       return;
     }
 
-    asyncOp<cv::Mat>(info[1].As<v8::Function>(), [self, cropRect]() {
+    maybeAsyncOp<cv::Mat>(info, [self, cropRect]() {
       return self(cropRect).clone();
     }, [](const cv::Mat& result) {
       return Matrix::create(result);

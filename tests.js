@@ -211,6 +211,46 @@ describe('simple-cv', () => {
 
     });
 
+    describe('Matrix.cropSync', () => {
+
+      it('should create a new matrix from the subset of another one', () => {
+        const matrix = new cv.Matrix([
+          [1, 2, 3],
+          [4, 5, 6],
+          [7, 8, 9]
+        ]);
+
+        const res1 = matrix.cropSync({x: 0, y: 0, width: 2, height: 3});
+        const res2 = matrix.cropSync({x: 1, y: 2, width: 2, height: 1});
+        const res3 = matrix.cropSync({x: 0, y: 0, width: 3, height: 3})
+
+        expect(res1.toArray()).to.eql([1, 2, 4, 5, 7, 8]);
+        expect(res2.toArray()).to.eql([8, 9]);
+        expect(res3.toArray()).to.eql([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+      });
+
+      it('should fail gracefully if crop goes out of borders', () => {
+        const matrix = new cv.Matrix([
+          [1, 2, 3],
+          [4, 5, 6],
+          [7, 8, 9]
+        ]);
+
+        expect(() => {
+          matrix.cropSync({x: 10, y: 1, width: 2, height: 2})
+        }).to.throwException(err => {
+          expect(err.message).to.equal('crop (x=10..12, y=1..3) goes outside the matrix bounds (w=3, h=3)');
+        });
+
+        expect(() => {
+          matrix.cropSync({x: 0, y: 0, width: 4, height: 4})
+        }).to.throwException(err => {
+          expect(err.message).to.equal('crop (x=0..4, y=0..4) goes outside the matrix bounds (w=3, h=3)');
+        });
+      });
+
+    });
+
     describe('Matrix.set', () => {
 
       it('should set a sub region of a matrix', () => {
@@ -272,6 +312,63 @@ describe('simple-cv', () => {
 
     });
 
+    describe('Matrix.setSync', () => {
+
+      it('should set a sub region of a matrix', () => {
+        const target = new cv.Matrix([
+          [1, 2, 3],
+          [4, 5, 6],
+          [7, 8, 9]
+        ]);
+
+        const source = new cv.Matrix([
+          [11, 22],
+          [33, 44],
+        ]);
+
+        target.setSync(source, {x: 1, y: 0});
+        expect(target.toArray()).to.eql([
+          1, 11, 22,
+          4, 33, 44,
+          7, 8,  9
+        ]);
+
+        target.setSync(source, {x: 0, y: 1});
+        expect(target.toArray()).to.eql([
+          1,  11, 22,
+          11, 22, 44,
+          33, 44,  9
+        ]);
+
+        target.setSync(source, {x: 1, y: 1});
+        expect(target.toArray()).to.eql([
+          1,  11, 22,
+          11, 11, 22,
+          33, 33, 44
+        ]);
+      });
+
+      it('should fail gracefully if the set goes out of borders', () => {
+        const target = new cv.Matrix([
+          [1, 2, 3],
+          [4, 5, 6],
+          [7, 8, 9]
+        ]);
+
+        const source = new cv.Matrix([
+          [11, 22],
+          [33, 44],
+        ]);
+
+        expect(() => {
+          target.setSync(source, {x: 2, y: 2});
+        }).to.throwException(err => {
+          expect(err.message).to.equal('set (x=2..4, y=2..4) goes outside the matrix bounds (w=3, h=3)');
+        });
+      });
+
+    });
+
     describe('Matrix.toBuffers', () => {
 
       it('should return an array with data buffer for each channel', () => {
@@ -296,7 +393,9 @@ describe('simple-cv', () => {
 
           buffers = float.toBuffers();
           expect(buffers).to.have.length(1);
-          expect(buffers.find(it => it.channel == cv.Channel.Float).data.length).to.equal(4);
+          expect(buffers.find(it => it.channel == cv.Channel.Float).data.length).to.equal(4 * 8);
+          expect(buffers.find(it => it.channel == cv.Channel.Float).data.readDoubleLE(0)).to.equal(1);
+          expect(buffers.find(it => it.channel == cv.Channel.Float).data.readDoubleLE(16)).to.equal(3);
 
           buffers = gray.toBuffers();
           expect(buffers).to.have.length(1);
@@ -367,6 +466,45 @@ describe('simple-cv', () => {
 
   });
 
+  describe('cv.readImageSync', () => {
+
+    it('should read an image', () => {
+      const matrix = cv.readImageSync(testImagePath);
+
+      expect(matrix.width).to.equal(testImageWidth);
+      expect(matrix.height).to.equal(testImageHeight);
+      expect(matrix.type).to.be.a('number');
+      expect(matrix.type).to.equal(cv.ImageType.BGR);
+    });
+
+    it('should read an image with alpha channel', () => {
+      const matrix = cv.readImageSync(alphaImagePath);
+
+      expect(matrix.width).to.equal(alphaImageWidth);
+      expect(matrix.height).to.equal(alphaImageHeight);
+      expect(matrix.type).to.be.a('number');
+      expect(matrix.type).to.equal(cv.ImageType.BGRA);
+    });
+
+    it('should read a grayscale image', () => {
+      const matrix =  cv.readImageSync(testImagePath, cv.ImageType.Gray);
+
+      expect(matrix.width).to.equal(testImageWidth);
+      expect(matrix.height).to.equal(testImageHeight);
+      expect(matrix.type).to.be.a('number');
+      expect(matrix.type).to.equal(cv.ImageType.Gray);
+    });
+
+    it('should fail if trying to read an invalid or unsupported image', () => {
+      expect(() => {
+        cv.readImageSync(invalidImagePath);
+      }).to.throwException(err => {
+        expect(err.message).to.equal(`invalid image file "${invalidImagePath}"`);
+      });
+    });
+
+  });
+
   describe('cv.decodeImage', () => {
 
     it('should decode an image', () => {
@@ -390,6 +528,113 @@ describe('simple-cv', () => {
         expect(image.width).to.equal(alphaImageWidth);
         expect(image.height).to.equal(alphaImageHeight);
         expect(image.type).to.equal(cv.ImageType.BGRA);
+      });
+    });
+
+    it('should fail if the first argument is not a buffer', (done) => {
+      cv.decodeImage([])
+        .then(() => done(new Error('should not get here')))
+        .catch(err => {
+          expect(err.message).to.equal('first argument (data) must be a Buffer');
+          done();
+        })
+        .catch(done);
+    });
+
+    it('should fail if the second argument is an invalid ImageType', (done) => {
+      const buffer = fs.readFileSync(alphaImagePath);
+
+      cv.decodeImage(buffer, 666)
+        .then(() => done(new Error('should not get here')))
+        .catch(err => {
+          expect(err.message).to.equal('second argument (decodeType) must be a one of [cv.ImageType.Gray, cv.ImageType.BGR, cv.ImageType.BGRA]');
+          done();
+        })
+        .catch(done);
+    });
+
+    it('should fail if too many arguments are given', (done) => {
+      const buffer = fs.readFileSync(alphaImagePath);
+
+      cv.decodeImage(buffer, cv.ImageType.Gray, null)
+        .then(() => done(new Error('should not get here')))
+        .catch(err => {
+          expect(err.message).to.equal('expected at least one argument (data) and at most three arguments (data, decodeType, callback)');
+          done();
+        })
+        .catch(done);
+    });
+
+    it('should fail if invalid image data is given', (done) => {
+      const buffer = fs.readFileSync(alphaImagePath);
+
+      cv.decodeImage(Buffer.allocUnsafe(1234))
+        .then(() => done(new Error('should not get here')))
+        .catch(err => {
+          expect(err.message).to.equal('invalid image data');
+          done();
+        })
+        .catch(done);
+    });
+
+  });
+
+  describe('cv.decodeImageSync', () => {
+
+    it('should decode an image', () => {
+      const mat = cv.matrix([
+        [10, 20, 30],
+        [40, 50, 60]
+      ]);
+
+      return cv.encodeImage(mat, cv.EncodeType.PNG).then(buffer => {
+        expect(Buffer.isBuffer(buffer)).to.equal(true);
+        const image = cv.decodeImageSync(buffer, cv.ImageType.Gray);
+        expect(image.toArray()).to.eql([10, 20, 30, 40, 50, 60]);
+      });
+    });
+
+    it('should decode an image with an alpha channel', () => {
+      const buffer = fs.readFileSync(alphaImagePath);
+      const image = cv.decodeImageSync(buffer);
+      expect(image.width).to.equal(alphaImageWidth);
+      expect(image.height).to.equal(alphaImageHeight);
+      expect(image.type).to.equal(cv.ImageType.BGRA);
+    });
+
+    it('should fail if the first argument is not a buffer', () => {
+      expect(() => {
+        cv.decodeImageSync([])
+      }).to.throwException(err => {
+        expect(err.message).to.equal('first argument (data) must be a Buffer');
+      });
+    });
+
+    it('should fail if the second argument is an invalid ImageType', () => {
+      const buffer = fs.readFileSync(alphaImagePath);
+
+      expect(() => {
+        cv.decodeImageSync(buffer, 666)
+      }).to.throwException(err => {
+        expect(err.message).to.equal('second argument (decodeType) must be a one of [cv.ImageType.Gray, cv.ImageType.BGR, cv.ImageType.BGRA]');
+      });
+    });
+
+    it('should fail if too many arguments are given', () => {
+      const buffer = fs.readFileSync(alphaImagePath);
+
+      expect(() => {
+        cv.decodeImageSync(buffer, cv.ImageType.Gray, null)
+      }).to.throwException(err => {
+        expect(err.message).to.equal('third argument (callback) must be a function');
+      });
+    });
+
+    it('should fail if invalid image data is given', () => {
+      expect(() => {
+        cv.decodeImageSync(Buffer.allocUnsafe(1234))
+      }).to.throwException(err => {
+        expect(err.message).to.equal('invalid image data');
       });
     });
 
@@ -433,6 +678,38 @@ describe('simple-cv', () => {
 
   });
 
+  describe('cv.writeImageSync', () => {
+    const filePath = path.join(os.tmpdir(), 'tmp.png');
+
+    beforeEach(() => {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    });
+
+    it('should write an image', () => {
+      const filePath = path.join(os.tmpdir(), 'tmp.png');
+      const mat = new cv.Matrix([
+        [10, 20, 30],
+        [40, 50, 60]
+      ]);
+
+      cv.writeImageSync(mat, filePath);
+      const image = cv.readImageSync(filePath, cv.ImageType.Gray);
+      expect(image.toArray()).to.eql([10, 20, 30, 40, 50, 60]);
+    });
+
+    it('should write an image with an alpha channel', () => {
+      cv.writeImageSync(cv.readImageSync(alphaImagePath), filePath);
+      const image = cv.readImageSync(filePath);
+
+      expect(image.width).to.equal(alphaImageWidth);
+      expect(image.height).to.equal(alphaImageHeight);
+      expect(image.type).to.equal(cv.ImageType.BGRA);
+    });
+
+  });
+
   describe('cv.encodeImage', () => {
 
     it('should encode an image', () => {
@@ -451,6 +728,81 @@ describe('simple-cv', () => {
         });
       });
 
+    });
+
+    it('should fail if the first argument is not a matrix', (done) => {
+      cv.encodeImage({}, cv.EncodeType.JPEG)
+        .then(() => done(new Error('should not get here')))
+        .catch(err => {
+          expect(err.message).to.equal('first argument (image) must be a Matrix');
+          done();
+        })
+        .catch(done)
+    });
+
+    it('should fail if the second argument is not a cv.EncodeType (1)', (done) => {
+      cv.encodeImage(cv.matrix([[1, 2, 3, 4], [5, 6, 7, 8]]), 'png')
+        .then(() => done(new Error('should not get here')))
+        .catch(err => {
+          expect(err.message).to.equal('second argument (type) must be one of [cv.EncodeType.JPEG, cv.EncodeType.PNG]');
+          done();
+        })
+        .catch(done)
+    });
+
+    it('should fail if the second argument is not a cv.EncodeType (2)', (done) => {
+      cv.encodeImage(cv.matrix([[1, 2, 3, 4], [5, 6, 7, 8]]), 666)
+        .then(() => done(new Error('should not get here')))
+        .catch(err => {
+          expect(err.message).to.equal('second argument (type) must be one of [cv.EncodeType.JPEG, cv.EncodeType.PNG]');
+          done();
+        })
+        .catch(done)
+    });
+
+  });
+
+  describe('cv.encodeImageSync', () => {
+
+    it('should encode an image', () => {
+      const filePath = path.join(os.tmpdir(), 'tmp.jpg');
+
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+
+      return cv.readImage(testImagePath).then(image => {
+        const buffer = cv.encodeImageSync(image, cv.EncodeType.JPEG);
+
+        return cv.writeImage(image, filePath).then(() => {
+          expect(buffer.equals(fs.readFileSync(filePath))).to.equal(true);
+        });
+      });
+
+    });
+
+    it('should fail if the first argument is not a matrix', () => {
+      expect(() => {
+        cv.encodeImageSync({}, cv.EncodeType.JPEG);
+      }).to.throwException(err => {
+        expect(err.message).to.equal('first argument (image) must be a Matrix');
+      });
+    });
+
+    it('should fail if the second argument is not a cv.EncodeType (1)', () => {
+      expect(() => {
+        cv.encodeImageSync(cv.matrix([[1, 2, 3, 4], [5, 6, 7, 8]]), 'png')
+      }).to.throwException(err => {
+        expect(err.message).to.equal('second argument (type) must be one of [cv.EncodeType.JPEG, cv.EncodeType.PNG]');
+      });
+    });
+
+    it('should fail if the second argument is not a cv.EncodeType (2)', () => {
+      expect(() => {
+        cv.encodeImageSync(cv.matrix([[1, 2, 3, 4], [5, 6, 7, 8]]), 666)
+      }).to.throwException(err => {
+        expect(err.message).to.equal('second argument (type) must be one of [cv.EncodeType.JPEG, cv.EncodeType.PNG]');
+      });
     });
 
   });
@@ -658,7 +1010,47 @@ describe('simple-cv', () => {
 
   });
 
-  describe('warpAffine', () => {
+  describe('cv.resizeSync', () => {
+
+    it('should resize image to width preserving aspect ratio', () => {
+      const image = cv.readImageSync(testImagePath);
+      const resized = cv.resizeSync(image, testImageWidth / 2);
+
+      expect(resized.width).to.equal(testImageWidth / 2);
+      expect(resized.height).to.equal(testImageHeight / 2);
+      expect(resized.type).to.equal(cv.ImageType.BGR);
+    });
+
+    it('should resize gray image to width preserving aspect ratio', () => {
+      const image = cv.readImageSync(testImagePath, cv.ImageType.Gray);
+      const resized = cv.resizeSync(image, testImageWidth / 2);
+
+      expect(resized.width).to.equal(testImageWidth / 2);
+      expect(resized.height).to.equal(testImageHeight / 2);
+      expect(resized.type).to.equal(cv.ImageType.Gray);
+    });
+
+    it('should resize image to width preserving aspect ratio', () => {
+      const image = cv.readImageSync(testImagePath);
+      const resized = cv.resizeSync(image, {width: testImageWidth / 4});
+
+      expect(resized.width).to.equal(testImageWidth / 4);
+      expect(resized.height).to.equal(testImageHeight / 4);
+      expect(resized.type).to.equal(cv.ImageType.BGR);
+    });
+
+    it('should resize image to height preserving aspect ratio', () => {
+      const image = cv.readImageSync(testImagePath);
+      const resized = cv.resizeSync(image, {height: testImageHeight / 4});
+
+      expect(resized.width).to.equal(testImageWidth / 4);
+      expect(resized.height).to.equal(testImageHeight / 4);
+      expect(resized.type).to.equal(cv.ImageType.BGR);
+    });
+
+  });
+
+  describe('cv.warpAffine', () => {
 
     it('should transform an image', () => {
       const matrix = cv.matrix([
@@ -711,7 +1103,59 @@ describe('simple-cv', () => {
 
   });
 
-  describe('rotationMatrix', () => {
+  describe('cv.warpAffineSync', () => {
+
+    it('should transform an image', () => {
+      const matrix = cv.matrix([
+        [1, 2, 0],
+        [3, 4, 0],
+        [0, 0, 0]
+      ]);
+
+      const transpose = cv.matrix([
+        [0, 1, 0],
+        [1, 0, 0]
+      ]);
+
+      // Test a simple transpose transformation.
+      const result = cv.warpAffineSync(matrix, transpose);
+
+      expect(result.toArray()).to.eql([
+        1, 3, 0,
+        2, 4, 0,
+        0, 0, 0
+      ]);
+    });
+
+    it('should accept options object', () => {
+      const matrix = cv.matrix([
+        [1, 2, 0],
+        [3, 4, 0],
+        [0, 0, 0]
+      ]);
+
+      const rot = cv.rotationMatrix({x: 0, y: 0}, 90);
+
+      const res1 = cv.warpAffineSync(matrix, rot, {borderType: cv.BorderType.Replicate});
+
+      expect(res1.toArray()).to.eql([
+        1, 3, 0,
+        1, 3, 0,
+        1, 3, 0
+      ]);
+
+      const res2 = cv.warpAffineSync(matrix, rot, {borderType: cv.BorderType.Constant, borderValue: 5});
+
+      expect(res2.toArray()).to.eql([
+        1, 3, 0,
+        5, 5, 5,
+        5, 5, 5
+      ]);
+    });
+
+  });
+
+  describe('cv.rotationMatrix', () => {
 
     it('should create an affine rotation transformation matrix', () => {
       const matrix = cv.matrix([
@@ -734,7 +1178,7 @@ describe('simple-cv', () => {
 
   });
 
-  describe('rotate', () => {
+  describe('cv.rotate', () => {
 
     it('should rotate an image', () => {
       const matrix = cv.matrix([
@@ -770,7 +1214,43 @@ describe('simple-cv', () => {
 
   });
 
-  describe('flipLeftRight', () => {
+  describe('cv.rotateSync', () => {
+
+    it('should rotate an image', () => {
+      const matrix = cv.matrix([
+        [1, 2, 0],
+        [3, 4, 0],
+        [0, 0, 0]
+      ]);
+
+      const result = cv.rotateSync(matrix, 90);
+
+      expect(result.toArray()).to.eql([
+        0, 0, 0,
+        2, 4, 0,
+        1, 3, 0
+      ]);
+    });
+
+    it('should accept an options object', () => {
+      const matrix = cv.matrix([
+        [1, 2, 0],
+        [3, 4, 0],
+        [0, 0, 0]
+      ]);
+
+      const result = cv.rotateSync(matrix, {angle: 90, xCenter: 0, yCenter: 1});
+
+      expect(result.toArray()).to.eql([
+        4, 0, 0,
+        3, 0, 0,
+        0, 0, 0
+      ]);
+    });
+
+  });
+
+  describe('cv.flipLeftRight', () => {
 
     it('should flip an image', () => {
       const matrix = cv.matrix([
@@ -790,7 +1270,27 @@ describe('simple-cv', () => {
 
   });
 
-  describe('flipUpDown', () => {
+  describe('cv.flipLeftRightSync', () => {
+
+    it('should flip an image', () => {
+      const matrix = cv.matrix([
+        [1, 2, 0],
+        [3, 4, 0],
+        [0, 0, 0]
+      ]);
+
+      const result = cv.flipLeftRightSync(matrix);
+
+      expect(result.toArray()).to.eql([
+        0, 2, 1,
+        0, 4, 3,
+        0, 0, 0
+      ]);
+    });
+
+  });
+
+  describe('cv.flipUpDown', () => {
 
     it('should flip an image', () => {
       const matrix = cv.matrix([
@@ -806,6 +1306,26 @@ describe('simple-cv', () => {
           1, 2, 0
         ]);
       });
+    });
+
+  });
+
+  describe('cv.flipUpDownSync', () => {
+
+    it('should flip an image', () => {
+      const matrix = cv.matrix([
+        [1, 2, 0],
+        [3, 4, 0],
+        [0, 0, 0]
+      ]);
+
+      const result = cv.flipUpDownSync(matrix);
+
+      expect(result.toArray()).to.eql([
+        0, 0, 0,
+        3, 4, 0,
+        1, 2, 0
+      ]);
     });
 
   });

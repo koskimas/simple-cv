@@ -6,9 +6,15 @@
 #include "utils.h"
 #include "constants.h"
 
+/**
+ * warpAffine(image, transformation)
+ * warpAffine(image, transformation, options)
+ * warpAffine(image, transformation, callback)
+ * warpAffine(image, transformation, options, callback)
+ */
 NAN_METHOD(warpAffine) {
-  if (info.Length() < 3) {
-    Nan::ThrowError("expected three (image, transformation, callback), or four (image, transformation, options, callback) arguments");
+  if (info.Length() < 2 || info.Length() > 4) {
+    Nan::ThrowError("expected at least two arguments (image, transformation) and at most four arguments (image, transformation, options, callback)");
     return;
   }
 
@@ -33,56 +39,40 @@ NAN_METHOD(warpAffine) {
 
   int borderType = BorderTypeConstant;
   int borderValue = 0;
-  v8::Local<v8::Function> callback;
 
-  if (info.Length() >= 4) {
-    if (!info[2]->IsObject()) {
-      Nan::ThrowError("third argument (options) must be an object");
-      return;
-    }
+  if (info.Length() >= 3) {
+    if (info[2]->IsObject() && !info[2]->IsFunction()) {
+      auto opt = info[2];
 
-    auto opt = info[2];
+      if (has(opt, "borderType")) {
+        if (!getValue(opt, "borderType")->IsInt32()) {
+          Nan::ThrowError("borderType must be one of cv.BorderType.[Constant, Reflect, Reflect101, Replicate, Wrap]");
+          return;
+        }
 
-    if (has(opt, "borderType")) {
+        borderType = get<int>(opt, "borderType");
 
-      if (!getValue(opt, "borderType")->IsInt32()) {
-        Nan::ThrowError("borderType must be one of cv.BorderType.[Constant, Reflect, Reflect101, Replicate, Wrap]");
-        return;
+        if (borderType != BorderTypeConstant
+            && borderType != BorderTypeReflect
+            && borderType != BorderTypeReflect101
+            && borderType != BorderTypeReplicate
+            && borderType != BorderTypeWrap) {
+
+          Nan::ThrowError("borderType must be one of cv.BorderType.[Constant, Reflect, Reflect101, Replicate, Wrap]");
+          return;
+        }
       }
 
-      borderType = get<int>(opt, "borderType");
-
-      if (borderType != BorderTypeConstant
-          && borderType != BorderTypeReflect
-          && borderType != BorderTypeReflect101
-          && borderType != BorderTypeReplicate
-          && borderType != BorderTypeWrap) {
-
-        Nan::ThrowError("borderType must be one of cv.BorderType.[Constant, Reflect, Reflect101, Replicate, Wrap]");
-        return;
+      if (has(opt, "borderValue")) {
+        borderValue = get<int>(opt, "borderValue");
       }
-    }
-
-    if (has(opt, "borderValue")) {
-      borderValue = get<int>(opt, "borderValue");
-    }
-
-    if (!info[3]->IsFunction()) {
-      Nan::ThrowError("fourth argument (callback) must be a function");
+    } else if (!info[2]->IsFunction()) {
+      Nan::ThrowError("third argument must be either a callback or an options object");
       return;
     }
-
-    callback = info[3].As<v8::Function>();
-  } else {
-    if (!info[2]->IsFunction()) {
-      Nan::ThrowError("third argument (callback) must be a function");
-      return;
-    }
-
-    callback = info[2].As<v8::Function>();
   }
 
-  asyncOp<cv::Mat>(callback, [image, trans, borderType, borderValue]() {
+  maybeAsyncOp<cv::Mat>(info, [image, trans, borderType, borderValue]() {
     cv::Mat output;
     cv::warpAffine(image, output, trans, image.size(), CV_INTER_CUBIC, borderType, borderValue);
     return output;

@@ -49,21 +49,6 @@ private:
 
 };
 
-inline void asyncOp(v8::Local<v8::Function> callback, std::function<void(void)> worker) {
-  Nan::HandleScope scope;
-
-  Nan::AsyncQueueWorker(new AsyncOp<int>(
-      [worker]() {
-        worker();
-        return 0;
-      },
-      [](const int&) {
-        return Nan::Null();
-      },
-      new Nan::Callback(callback)
-  ));
-}
-
 template<typename T>
 inline void asyncOp(v8::Local<v8::Function> callback, std::function<T(void)> worker, std::function<v8::Local<v8::Value>(T)> outputMapper) {
   Nan::HandleScope scope;
@@ -73,6 +58,22 @@ inline void asyncOp(v8::Local<v8::Function> callback, std::function<T(void)> wor
       outputMapper,
       new Nan::Callback(callback)
   ));
+}
+
+template<typename T>
+inline void maybeAsyncOp(const Nan::FunctionCallbackInfo<v8::Value>& info, std::function<T(void)> worker, std::function<v8::Local<v8::Value>(T)> outputMapper) {
+  Nan::HandleScope scope;
+
+  if (info.Length() > 0 && info[info.Length() - 1]->IsFunction()) {
+    asyncOp<T>(info[info.Length() - 1].As<v8::Function>(), worker, outputMapper);
+  } else {
+    try {
+      T output = worker();
+      info.GetReturnValue().Set(outputMapper(output));
+    } catch (std::exception& err) {
+      Nan::ThrowError(err.what());
+    }
+  }
 }
 
 #endif //SIMPLE_CV_ASYNC_H

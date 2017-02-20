@@ -1,6 +1,7 @@
 # simple-cv
 
-Asynchronous [Node.js](https://nodejs.org/en/) bindings for [OpenCV](http://opencv.org/) with a simple promise based API and excellent documentation.
+Asynchronous [OpenCV](http://opencv.org/) bindings for [Node.js](https://nodejs.org/en/) with a simple promise based API 
+and excellent documentation.
 
 `simple-cv` replicates the good parts of the OpenCV API but replaces the really crappy ones with something
 better. For example instead of a `flip` method that takes a number literal -1, 0 or 1 to indicate flip direction
@@ -8,8 +9,10 @@ better. For example instead of a `flip` method that takes a number literal -1, 0
 
 All heavy operations are performed in a worker thread pool and the results a returned back asynchronously using 
 promises.
+
+All methods have a synchronous equivalent. Just append `Sync` to the function name.
  
-The documentation is full of examples, but here's one to get you started.
+The documentation is full of examples but here's one to get you started:
 
 ```js
 const cv = require('simple-cv');
@@ -29,7 +32,7 @@ example().then(image => {
 });
 ```
 
-This project is a work is still in its infancy and only a small part of the OpenCV API is wrapped. 
+This project is still in its infancy and only a small part of the OpenCV API is wrapped. 
 More stuff is added all the time.
 
 <br/>
@@ -90,7 +93,10 @@ The basic data type used to represent images, transformation matrices etc. Wraps
 | type     | [`ImageType`](#imagetype) | The type of the matrix. Default = `ImageType.Gray`. 
 
 ```js
-const matrix = new cv.Matrix(10, 20, cv.ImageType.Float);
+let matrix = new cv.Matrix(10, 20, cv.ImageType.Float);
+
+// The same using the cv.matrix shorthand:
+matrix = cv.matrix(10, 20, cv.ImageType.Float);
 ```
 
 <br/>
@@ -105,7 +111,7 @@ const matrix = new cv.Matrix(10, 20, cv.ImageType.Float);
 | data     | Array<number>             | The data in a row-major order.
 
 ```js
-const matrix = new cv.Matrix({
+let matrix = new cv.Matrix({
   width: 3,
   height: 2, 
   type: cv.ImageType.Float,
@@ -113,7 +119,43 @@ const matrix = new cv.Matrix({
     1, 2, 3,
     4, 5, 6
   ]
- });
+});
+
+// The same using the cv.matrix shorthand:
+matrix = cv.matrix({
+  width: 3,
+  height: 2, 
+  type: cv.ImageType.Float,
+  data: [
+    1, 2, 3,
+    4, 5, 6
+  ]
+});
+```
+
+<br/>
+
+#### cv.Matrix(rows)
+
+Creates a `cv.ImageType.Float` matrix.
+
+| property | type                | description
+| -------- | --------------------| --------------------------
+| rows     | Array<Array<number> | The values as a list of rows
+
+```js
+let matrix = new cv.Matrix([
+  [1, 2, 3],
+  [4, 5, 6],
+  [7, 8, 9]
+]);
+
+// The same using the cv.matrix shorthand:
+matrix = cv.matrix([
+  [1, 2, 3],
+  [4, 5, 6],
+  [7, 8, 9]
+]);
 ```
 
 <br/>

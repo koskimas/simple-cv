@@ -5,8 +5,8 @@
 #include "async.h"
 
 NAN_METHOD(flipLeftRight) {
-  if (info.Length() != 2) {
-    Nan::ThrowError("expected two (image, callback) arguments");
+  if (info.Length() < 1 || info.Length() > 2) {
+    Nan::ThrowError("expected at least one argument (image) and at most two arguments (image, callback)");
     return;
   }
 
@@ -17,12 +17,7 @@ NAN_METHOD(flipLeftRight) {
 
   cv::Mat image = Matrix::get(info[0]);
 
-  if (!info[1]->IsFunction()) {
-    Nan::ThrowError("second argument (callback) must be a function");
-    return;
-  }
-
-  asyncOp<cv::Mat>(info[1].As<v8::Function>(), [image]() {
+  maybeAsyncOp<cv::Mat>(info, [image]() {
     cv::Mat output;
     cv::flip(image, output, 1);
     return output;

@@ -1,14 +1,20 @@
-#ifndef SIMPLE_CV_DECODEIMAGE_H
-#define SIMPLE_CV_DECODEIMAGE_H
+#ifndef SIMPLE_CV_DECODE_IMAGE_H
+#define SIMPLE_CV_DECODE_IMAGE_H
 
 #include "Matrix.h"
 #include "async.h"
 
-NAN_METHOD(decodeimage) {
+/**
+ * decodeImage(image)
+ * decodeImage(image, callback)
+ * decodeImage(image, decodeType)
+ * decodeImage(image, decodeType, callback)
+ */
+NAN_METHOD(decodeImage) {
   int decodeType = cv::IMREAD_UNCHANGED;
 
-  if (info.Length() < 2) {
-    Nan::ThrowError("expected three (data, callback) arguments");
+  if (info.Length() < 1 || info.Length() > 3) {
+    Nan::ThrowError("expected at least one argument (data) and at most three arguments (data, decodeType, callback)");
     return;
   }
 
@@ -17,43 +23,36 @@ NAN_METHOD(decodeimage) {
     return;
   }
 
-  if (info.Length() == 2 && !info[1]->IsFunction()) {
-    Nan::ThrowError("second argument (callback) must be a function");
-    return;
+  if (info.Length() >= 2) {
+    if (info[1]->IsInt32()) {
+      int depth = Nan::To<int>(info[1]).FromJust();
+
+      if (depth == ImageTypeGray) {
+        decodeType = cv::IMREAD_GRAYSCALE;
+      } else if (depth == ImageTypeBGR) {
+        decodeType = cv::IMREAD_COLOR;
+      } else if (depth == ImageTypeBGRA) {
+        decodeType = cv::IMREAD_UNCHANGED;
+      } else {
+        Nan::ThrowError("second argument (decodeType) must be a one of [cv.ImageType.Gray, cv.ImageType.BGR, cv.ImageType.BGRA]");
+        return;
+      }
+    } else if (!info[1]->IsFunction()) {
+      Nan::ThrowError("second argument (decodeType) must be a one of [cv.ImageType.Gray, cv.ImageType.BGR, cv.ImageType.BGRA]");
+      return;
+    }
   }
 
-  if (info.Length() >= 3) {
-    if (!info[1]->IsInt32()) {
-      Nan::ThrowError("second argument (depth) must be a one of [cv.ImageType.Gray, cv.ImageType.BGR, cv.ImageType.BGRA]");
-      return;
-    }
-
-    if (!info[2]->IsFunction()) {
-      Nan::ThrowError("third argument (callback) must be a function");
-      return;
-    }
-
-    int depth = Nan::To<int>(info[1]).FromJust();
-
-    if (depth == ImageTypeGray) {
-      decodeType = cv::IMREAD_GRAYSCALE;
-    } else if (depth == ImageTypeBGR) {
-      decodeType = cv::IMREAD_COLOR;
-    } else if (depth == ImageTypeBGRA) {
-      decodeType = cv::IMREAD_UNCHANGED;
-    } else {
-      Nan::ThrowError("second argument (depth) must be a one of [cv.ImageType.Gray, cv.ImageType.BGR, cv.ImageType.BGRA]");
-      return;
-    }
+  if (info.Length() == 3 && !info[2]->IsFunction()) {
+    Nan::ThrowError("third argument (callback) must be a function");
+    return;
   }
 
   auto bytes = reinterpret_cast<uchar*>(node::Buffer::Data(info[0]));
   auto size = node::Buffer::Length(info[0]);
-
   std::vector<uchar> data(bytes, bytes + size);
-  v8::Local<v8::Function> callback = (info.Length() == 2 ? info[1] : info[2]).As<v8::Function>();
 
-  asyncOp<cv::Mat>(callback, [data, decodeType]() {
+  maybeAsyncOp<cv::Mat>(info, [data, decodeType]() {
     auto image = cv::imdecode(data, decodeType);
 
     if (image.empty()) {
@@ -66,4 +65,4 @@ NAN_METHOD(decodeimage) {
   });
 }
 
-#endif //SIMPLE_CV_DECODEIMAGE_H
+#endif // SIMPLE_CV_DECODE_IMAGE_H

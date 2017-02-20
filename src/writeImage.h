@@ -5,8 +5,8 @@
 #include "async.h"
 
 NAN_METHOD(writeImage) {
-  if (info.Length() < 3) {
-    Nan::ThrowError("expected three (image, filePath, callback) arguments");
+  if (info.Length() < 2 || info.Length() > 3) {
+    Nan::ThrowError("expected at least two arguments (image, filePath) and at most three arguments (image, filePath, callback)");
     return;
   }
 
@@ -20,17 +20,19 @@ NAN_METHOD(writeImage) {
     return;
   }
 
-  if (!info[2]->IsFunction()) {
+  if (info.Length() == 3 && !info[2]->IsFunction()) {
     Nan::ThrowError("third argument (callback) must be a function");
     return;
   }
 
   cv::Mat image = Matrix::get(info[0]);
   std::string filePath(v8::String::Utf8Value(info[1]->ToString()).operator*());
-  v8::Local<v8::Function> callback = info[2].As<v8::Function>();
 
-  asyncOp(callback, [filePath, image]() {
+  maybeAsyncOp<int>(info, [filePath, image]() {
     cv::imwrite(filePath, image);
+    return 0;
+  }, [](const int& res) {
+    return Nan::Null();
   });
 }
 

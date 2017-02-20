@@ -4,9 +4,15 @@
 #include "Matrix.h"
 #include "async.h"
 
+/**
+ * encodeImage(image, type, callback)
+ * encodeImage(image, type)
+ */
 NAN_METHOD(encodeImage) {
-  if (info.Length() < 3) {
-    Nan::ThrowError("expected three (image, type, callback) arguments");
+  int type;
+
+  if (info.Length() < 2 || info.Length() > 3) {
+    Nan::ThrowError("expected at least two arguments (image, type) and at most three arguments (image, type, callback)");
     return;
   }
 
@@ -15,27 +21,26 @@ NAN_METHOD(encodeImage) {
     return;
   }
 
-  if (!info[1]->IsInt32()) {
+  if (info[1]->IsInt32()) {
+    type = Nan::To<int>(info[1]).FromJust();
+
+    if (type != EncodeTypeJPEG && type != EncodeTypePNG) {
+      Nan::ThrowError("second argument (type) must be one of [cv.EncodeType.JPEG, cv.EncodeType.PNG]");
+      return;
+    }
+  } else {
     Nan::ThrowError("second argument (type) must be one of [cv.EncodeType.JPEG, cv.EncodeType.PNG]");
     return;
   }
 
-  int type = Nan::To<int>(info[1]).FromJust();
-
-  if (type != EncodeTypeJPEG && type != EncodeTypePNG) {
-    Nan::ThrowError("second argument (type) must be one of [cv.EncodeType.JPEG, cv.EncodeType.PNG]");
-    return;
-  }
-
-  if (!info[2]->IsFunction()) {
+  if (info.Length() == 3 && !info[2]->IsFunction()) {
     Nan::ThrowError("third argument (callback) must be a function");
     return;
   }
 
   cv::Mat image = Matrix::get(info[0]);
-  v8::Local<v8::Function> callback = info[2].As<v8::Function>();
 
-  asyncOp<std::vector<uchar>>(callback, [type, image]() {
+  maybeAsyncOp<std::vector<uchar>>(info, [type, image]() {
     std::vector<uchar> data;
 
     if (type == EncodeTypeJPEG) {

@@ -453,7 +453,7 @@ Rotates the image around a point.
 
 | argument       | type                                      | description
 | -------------- | ----------------------------------------- | ------------------------------------
-| matrix         | [`Matrix`](#matrix)                       | The matrix to flip
+| matrix         | [`Matrix`](#matrix)                       | The matrix to rotate
 | opt            | [`RotateParams`](#rotateparams) or number | The rotation angle as degrees or options object. See [`RotateParams`](#rotateparams)
 
 | return value | type                 | description
@@ -704,5 +704,6 @@ resizeParams = {
 | ----------- | --------------------------- | --------------------------
 | x           | number                      | The x-coordinate if the point around which the image will be rotated
 | y           | number                      | The y-coordinate if the point around which the image will be rotated
+| angle       | number                      | Rotation angle (degrees)
 | borderType  | [`BorderType`](#bordertype) | How to fill the empty space the rotation causes
 | borderValue | number                      | The constant value for `BorderType.Constant`

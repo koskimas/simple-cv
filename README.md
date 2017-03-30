@@ -1,7 +1,7 @@
 # simple-cv
 
 Asynchronous [OpenCV](http://opencv.org/) bindings for [Node.js](https://nodejs.org/en/) with a simple promise based API 
-and excellent documentation.
+and good documentation.
 
 `simple-cv` replicates the good parts of the OpenCV API but replaces the really crappy ones with something
 better. For example instead of a `flip` method that takes a number literal -1, 0 or 1 to indicate flip direction

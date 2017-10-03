@@ -15,7 +15,8 @@
       "libraries+": [
         "-lopencv_core",
         "-lopencv_imgproc",
-        "-lopencv_highgui"
+        "-lopencv_highgui",
+	"-L/usr/local/lib"
       ],
 
       "conditions": [

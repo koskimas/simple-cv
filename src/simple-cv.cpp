@@ -9,6 +9,8 @@
 #include "rotationMatrix.h"
 #include "flipUpDown.h"
 #include "flipLeftRight.h"
+#include "drawRectangle.h"
+#include "convertColor.h"
 
 NAN_MODULE_INIT(Init) {
   initConstants(target);
@@ -26,6 +28,8 @@ NAN_MODULE_INIT(Init) {
   Nan::SetMethod(target, "rotationMatrix", rotationMatrix);
   Nan::SetMethod(target, "flipUpDown", flipUpDown);
   Nan::SetMethod(target, "flipLeftRight", flipLeftRight);
+  Nan::SetMethod(target, "drawRectangle", drawRectangle);
+  Nan::SetMethod(target, "convertColor", convertColor);
 }
 
 NODE_MODULE(simple_cv, Init)

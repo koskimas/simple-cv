@@ -1330,4 +1330,201 @@ describe('simple-cv', () => {
 
   });
 
+  describe('cv.convertColor', () => {
+
+    it('should convert colors', () => {
+      const matrix = cv.matrix({
+        width: 3,
+        height: 3,
+        data: [
+          1, 2, 3,
+          4, 5, 5,
+          7, 8, 9
+        ],
+        type: cv.ImageType.Gray
+      });
+
+      return cv.convertColor(matrix, cv.Conversion.GrayToBGR).then(result => {
+        expect(result.type).to.equal(cv.ImageType.BGR);
+      });
+    });
+
+  });
+
+  describe('cv.convertColorSync', () => {
+
+    it('should convert colors', () => {
+      const matrix = cv.matrix({
+        width: 3,
+        height: 3,
+        data: [
+          1, 2, 3,
+          4, 5, 5,
+          7, 8, 9
+        ],
+        type: cv.ImageType.Gray
+      });
+
+      const result = cv.convertColorSync(matrix, cv.Conversion.GrayToBGR);
+      expect(result.type).to.equal(cv.ImageType.BGR);
+    });
+
+  });
+
+  describe('cv.drawRectangle', () => {
+
+    it('should flip an image', () => {
+      const matrix = cv.matrix([
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0]
+      ]);
+
+      cv.drawRectangle(matrix, {
+        x: 1,
+        y: 1,
+        width: 3,
+        height: 3
+      }, {
+        red: 255,
+        green: 255,
+        blue: 255
+      });
+
+      expect(matrix.toArray()).to.eql([
+        0, 0,     0,   0,
+        0, 255, 255, 255,
+        0, 255,   0, 255,
+        0, 255, 255, 255,
+      ]);
+    });
+
+  });
+
+  describe('Rect', () => {
+    const Rect = cv.Rect;
+
+    it('constructor should take an object', () => {
+      const rect = new Rect({x: 1, y: 2, width: 3, height: 4});
+      expect(rect).to.eql({x: 1, y: 2, width: 3, height: 4});
+    });
+
+    it('constructor should take x, y, width, height', () => {
+      const rect = new Rect(1, 2, 3, 4);
+      expect(rect).to.eql({x: 1, y: 2, width: 3, height: 4});
+    });
+
+    it('Rect.create should take an object', () => {
+      const rect = Rect.create({x: 1, y: 2, width: 3, height: 4});
+      expect(rect).to.eql({x: 1, y: 2, width: 3, height: 4});
+    });
+
+    it('Rect.create should take x, y, width, height', () => {
+      const rect = Rect.create(1, 2, 3, 4);
+      expect(rect).to.eql({x: 1, y: 2, width: 3, height: 4});
+    });
+
+    describe('Rect.multipliedBy', () => {
+
+      it('Rect.multipliedBy should multiply all values', () => {
+        const rect = new Rect(1, 2, 3, 4);
+        const rect2 = rect.multipliedBy(2);
+
+        expect(rect).to.eql({x: 1, y: 2, width: 3, height: 4});
+        expect(rect2).to.eql({x: 2, y: 4, width: 6, height: 8});
+      });
+
+      it('Rect.multipliedBy should accept separate multiplier for x and y', () => {
+        const rect = new Rect(1, 2, 3, 4);
+        const rect2 = rect.multipliedBy(2, 4);
+
+        expect(rect).to.eql({x: 1, y: 2, width: 3, height: 4});
+        expect(rect2).to.eql({x: 2, y: 8, width: 6, height: 16});
+      });
+
+      it('Rect.multipliedBy should accept an object', () => {
+        const rect = new Rect(1, 2, 3, 4);
+        const rect2 = rect.multipliedBy({xMul: 2, yMul: 4});
+
+        expect(rect).to.eql({x: 1, y: 2, width: 3, height: 4});
+        expect(rect2).to.eql({x: 2, y: 8, width: 6, height: 16});
+      });
+
+    });
+
+    describe('Rect.scaledBy', () => {
+
+      it('Rect.scaledBy should scale the rectangle', () => {
+        const rect = new Rect(1, 2, 3, 4);
+        const rect2 = rect.scaledBy(2);
+
+        expect(rect).to.eql({x: 1, y: 2, width: 3, height: 4});
+        expect(rect2).to.eql({x: 1, y: 2, width: 6, height: 8});
+      });
+
+      it('Rect.scaledBy should accept separate scale for width and height', () => {
+        const rect = new Rect(1, 2, 3, 4);
+        const rect2 = rect.scaledBy(2, 4);
+
+        expect(rect).to.eql({x: 1, y: 2, width: 3, height: 4});
+        expect(rect2).to.eql({x: 1, y: 2, width: 6, height: 16});
+      });
+
+      it('Rect.multipliedBy should accept an object', () => {
+        const rect = new Rect(1, 2, 3, 4);
+        const rect2 = rect.scaledBy({xScale: 2, yScale: 4});
+
+        expect(rect).to.eql({x: 1, y: 2, width: 3, height: 4});
+        expect(rect2).to.eql({x: 1, y: 2, width: 6, height: 16});
+      });
+
+    });
+
+    describe('Rect.movedBy', () => {
+
+      it('Rect.movedBy should move the rectangle', () => {
+        const rect = new Rect(1, 2, 3, 4);
+        const rect2 = rect.movedBy(10, 20);
+
+        expect(rect).to.eql({x: 1, y: 2, width: 3, height: 4});
+        expect(rect2).to.eql({x: 11, y: 22, width: 3, height: 4});
+      });
+
+      it('Rect.movedBy should accept an object', () => {
+        const rect = new Rect(1, 2, 3, 4);
+        const rect2 = rect.movedBy({x: 2, y: 4});
+
+        expect(rect).to.eql({x: 1, y: 2, width: 3, height: 4});
+        expect(rect2).to.eql({x: 3, y: 6, width: 3, height: 4});
+      });
+
+    });
+
+    describe('Rect.intersect', () => {
+
+      it('should return an intersection of two rectangles', () => {
+        let rect = Rect.create(0.2, 0.3, 1, 1);
+        let intr = rect.intersection({x: 0.5, y: 0.4, width: 1, height: 1});
+        expect(intr).to.eql({x: 0.5, y: 0.4, width: 0.7, height: 0.9});
+
+        rect = Rect.create(0, 0, 1, 1);
+        intr = rect.intersection({x: 2, y: 0.5, width: 1, height: 1});
+        expect(intr).to.eql({x: 0, y: 0, width: 0, height: 0});
+      });
+
+    });
+
+    describe('Rect.union', () => {
+
+      it('should return an union of two rectangles', () => {
+        let rect = Rect.create(-0.1, 0.1, 1, 1);
+        let union = rect.union({x: 0.5, y: 0.5, width: 1, height: 1});
+        expect(union).to.eql({x: -0.1, y: 0.1, width: 1.6, height: 1.4});
+      });
+
+    });
+
+  });
+
 });

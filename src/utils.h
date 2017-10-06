@@ -66,4 +66,22 @@ inline cv::Rect_<T> getRect(v8::Local<v8::Value> val) {
   return cv::Rect_<T>(get<T>(val, "x"), get<T>(val, "y"), get<T>(val, "width"), get<T>(val, "height"));
 }
 
+inline bool isColor(v8::Local<v8::Value> val) {
+  Nan::HandleScope scope;
+  return has(val, "red")
+    && has(val, "green")
+    && has(val, "blue")
+    && getValue(val, "red")->IsNumber()
+    && getValue(val, "green")->IsNumber()
+    && getValue(val, "blue")->IsNumber();
+}
+
+inline cv::Scalar getColor(v8::Local<v8::Value> val) {
+  if (has(val, "alpha")) {
+    return cv::Scalar(get<int>(val, "red"), get<int>(val, "green"), get<int>(val, "blue"), get<int>(val, "alpha"));
+  } else {
+    return cv::Scalar(get<int>(val, "red"), get<int>(val, "green"), get<int>(val, "blue"));
+  }
+}
+
 #endif //SIMPLE_CV_UTILS_H

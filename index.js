@@ -1,4 +1,5 @@
 const cv = require('bindings')('simple_cv');
+const { Rect } = require('./lib/Rect');
 
 const ImageType = {
   Gray: cv.ImageType.Gray,
@@ -27,6 +28,11 @@ const Channel = {
   Blue: cv.Channel.Blue,
   Alpha: cv.Channel.Alpha,
   Float: cv.Channel.Float
+};
+
+const Conversion = {
+  BGRToGray: cv.Conversion.BGRToGray,
+  GrayToBGR: cv.Conversion.GrayToBGR
 };
 
 class Matrix {
@@ -115,6 +121,10 @@ function showImage(windowName, image) {
   return cv.showImage(windowName, image && image._native);
 }
 
+function drawRectangle(image, rect, color, width) {
+  return cv.drawRectangle(image && image._native, rect, color, width);
+}
+
 function waitKey(...args) {
   return cv.waitKey(...args);
 }
@@ -137,6 +147,22 @@ function readImage(...args) {
 
 function readImageSync(...args) {
   return new Matrix(cv.readImage(...args));
+}
+
+function convertColor(image, conversion) {
+  return new Promise((resolve, reject) => {
+    cv.convertColor(image && image._native, conversion, (err, image) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(new Matrix(image));
+      }
+    });
+  });
+}
+
+function convertColorSync(image, conversion) {
+  return new Matrix(cv.convertColor(image && image._native, conversion));
 }
 
 function decodeImage(...args) {
@@ -303,13 +329,18 @@ module.exports = {
   ImageType,
   EncodeType,
   BorderType,
+  Conversion,
   Channel,
+  Rect,
 
   matrix,
   showImage,
+  drawRectangle,
   waitKey,
   readImage,
   readImageSync,
+  convertColor,
+  convertColorSync,
   decodeImage,
   decodeImageSync,
   writeImage,

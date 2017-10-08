@@ -125,6 +125,10 @@ function drawRectangle(image, rect, color, width) {
   return cv.drawRectangle(image && image._native, rect, color, width);
 }
 
+function drawLine(image, point1, point2, color, width) {
+  return cv.drawLine(image && image._native, point1, point2, color, width);
+}
+
 function waitKey(...args) {
   return cv.waitKey(...args);
 }
@@ -336,6 +340,7 @@ module.exports = {
   matrix,
   showImage,
   drawRectangle,
+  drawLine,
   waitKey,
   readImage,
   readImageSync,

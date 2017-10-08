@@ -10,6 +10,7 @@
 #include "flipUpDown.h"
 #include "flipLeftRight.h"
 #include "drawRectangle.h"
+#include "drawLine.h"
 #include "convertColor.h"
 
 NAN_MODULE_INIT(Init) {
@@ -29,6 +30,7 @@ NAN_MODULE_INIT(Init) {
   Nan::SetMethod(target, "flipUpDown", flipUpDown);
   Nan::SetMethod(target, "flipLeftRight", flipLeftRight);
   Nan::SetMethod(target, "drawRectangle", drawRectangle);
+  Nan::SetMethod(target, "drawLine", drawLine);
   Nan::SetMethod(target, "convertColor", convertColor);
 }
 

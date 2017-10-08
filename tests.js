@@ -1373,7 +1373,7 @@ describe('simple-cv', () => {
 
   describe('cv.drawRectangle', () => {
 
-    it('should flip an image', () => {
+    it('should draw a rectangle', () => {
       const matrix = cv.matrix([
         [0, 0, 0, 0],
         [0, 0, 0, 0],
@@ -1397,6 +1397,38 @@ describe('simple-cv', () => {
         0, 255, 255, 255,
         0, 255,   0, 255,
         0, 255, 255, 255,
+      ]);
+    });
+
+  });
+
+  describe('cv.drawLine', () => {
+
+    it('should draw a line', () => {
+      const matrix = cv.matrix([
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0]
+      ]);
+
+      cv.drawLine(matrix, {
+        x: 1,
+        y: 1,
+      },{
+        x: 3,
+        y: 3
+      }, {
+        red: 255,
+        green: 255,
+        blue: 255
+      });
+
+      expect(matrix.toArray()).to.eql([
+        0,   0,    0,    0,
+        0, 255,    0,    0,
+        0,   0,  255,    0,
+        0,   0,    0,  255,
       ]);
     });
 

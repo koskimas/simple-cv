@@ -78,9 +78,9 @@ inline bool isColor(v8::Local<v8::Value> val) {
 
 inline cv::Scalar getColor(v8::Local<v8::Value> val) {
   if (has(val, "alpha")) {
-    return cv::Scalar(get<int>(val, "red"), get<int>(val, "green"), get<int>(val, "blue"), get<int>(val, "alpha"));
+    return cv::Scalar(get<int>(val, "blue"), get<int>(val, "green"), get<int>(val, "red"), get<int>(val, "alpha"));
   } else {
-    return cv::Scalar(get<int>(val, "red"), get<int>(val, "green"), get<int>(val, "blue"));
+    return cv::Scalar(get<int>(val, "blue"), get<int>(val, "green"), get<int>(val, "red"));
   }
 }
 

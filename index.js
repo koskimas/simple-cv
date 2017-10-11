@@ -1,39 +1,11 @@
 const cv = require('bindings')('simple_cv');
 const { Rect } = require('./lib/Rect');
 
-const ImageType = {
-  Gray: cv.ImageType.Gray,
-  BGR: cv.ImageType.BGR,
-  BGRA: cv.ImageType.BGRA,
-  Float: cv.ImageType.Float
-};
-
-const EncodeType = {
-  PNG: cv.EncodeType.PNG,
-  JPEG: cv.EncodeType.JPEG
-};
-
-const BorderType = {
-  Replicate: cv.BorderType.Replicate,
-  Reflect: cv.BorderType.Reflect,
-  Reflect101: cv.BorderType.Reflect101,
-  Wrap: cv.BorderType.Wrap,
-  Constant: cv.BorderType.Constant
-};
-
-const Channel = {
-  Gray: cv.Channel.Gray,
-  Red: cv.Channel.Red,
-  Green: cv.Channel.Green,
-  Blue: cv.Channel.Blue,
-  Alpha: cv.Channel.Alpha,
-  Float: cv.Channel.Float
-};
-
-const Conversion = {
-  BGRToGray: cv.Conversion.BGRToGray,
-  GrayToBGR: cv.Conversion.GrayToBGR
-};
+const ImageType = cv.ImageType;
+const EncodeType = cv.EncodeType;
+const BorderType = cv.BorderType;
+const Channel = cv.Channel;
+const Conversion = cv.Conversion;
 
 class Matrix {
 
@@ -47,48 +19,64 @@ class Matrix {
     }
   }
 
+  get native() {
+    return this._native;
+  }
+
   get width() {
-    return this._native.width;
+    return this.native.width;
   }
 
   get height() {
-    return this._native.height;
+    return this.native.height;
   }
 
   get type() {
-    return this._native.type;
+    return this.native.type;
   }
 
-  crop(rect) {
-    return new Promise((resolve, reject) => {
-      this._native.crop(rect, (err, matrix) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(new Matrix(matrix));
-        }
-      });
-    });
+  crop(...args) {
+    return asyncWrap(this.native, this.native.crop, args);
   }
 
-  cropSync(rect) {
-    return new Matrix(this._native.crop(rect));
+  cropSync(...args) {
+    return wrap(this.native, this.native.crop, args);
   }
 
-  set(matrix, point) {
-    return new Promise((resolve, reject) => {
-      this._native.set(matrix && matrix._native, point, (err) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(this);
-        }
-      });
-    });
+  set(...args) {
+    return asyncWrap(this.native, this.native.set, args, this);
   }
 
-  setSync(matrix, point) {
-    return this._native.set(matrix && matrix._native, point);
+  setSync(...args) {
+    return wrap(this.native, this.native.set, args, this);
+  }
+
+  add(...args) {
+    return asyncWrap(this.native, this.native.add, args, this);
+  }
+
+  addSync(...args) {
+    return wrap(this.native, this.native.add, args, this);
+  }
+
+  subtract(...args) {
+    return asyncWrap(this.native, this.native.subtract, args, this);
+  }
+
+  subtractSync(...args) {
+    return wrap(this.native, this.native.subtract, args, this);
+  }
+
+  mul(...args) {
+    return asyncWrap(this.native, this.native.mul, args, this);
+  }
+
+  mulSync(...args) {
+    return wrap(this.native, this.native.mul, args, this);
+  }
+
+  clone(...args) {
+    return wrap(this.native, this.native.clone, args);
   }
 
   toString() {
@@ -96,11 +84,15 @@ class Matrix {
   }
 
   toArray() {
-    return this._native.toArray();
+    return this.native.toArray();
   }
 
   toBuffers() {
-    return this._native.toBuffers();
+    return this.native.toBuffers();
+  }
+
+  toBuffer() {
+    return this.native.toBuffer();
   }
 
   toJSON() {
@@ -117,173 +109,96 @@ function matrix(...args) {
   return new Matrix(...args);
 }
 
-function showImage(windowName, image) {
-  return cv.showImage(windowName, image && image._native);
+function showImage(...args) {
+  return wrap(cv, cv.showImage, args);
 }
 
-function drawRectangle(image, rect, color, width) {
-  return cv.drawRectangle(image && image._native, rect, color, width);
+function drawRectangle(...args) {
+  return wrap(cv, cv.drawRectangle, args);
 }
 
-function drawLine(image, point1, point2, color, width) {
-  return cv.drawLine(image && image._native, point1, point2, color, width);
+function drawLine(...args) {
+  return wrap(cv, cv.drawLine, args);
 }
 
 function waitKey(...args) {
-  return cv.waitKey(...args);
+  return wrap(cv, cv.waitKey, args);
 }
 
 function rotationMatrix(...args) {
-  return new Matrix(cv.rotationMatrix(...args));
+  return wrap(cv, cv.rotationMatrix, args);
 }
 
 function readImage(...args) {
-  return new Promise((resolve, reject) => {
-    cv.readImage(...args, (err, image) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(new Matrix(image));
-      }
-    });
-  });
+  return asyncWrap(cv, cv.readImage, args);
 }
 
 function readImageSync(...args) {
-  return new Matrix(cv.readImage(...args));
+  return wrap(cv, cv.readImage, args);
 }
 
-function convertColor(image, conversion) {
-  return new Promise((resolve, reject) => {
-    cv.convertColor(image && image._native, conversion, (err, image) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(new Matrix(image));
-      }
-    });
-  });
+function convertColor(...args) {
+  return asyncWrap(cv, cv.convertColor, args);
 }
 
-function convertColorSync(image, conversion) {
-  return new Matrix(cv.convertColor(image && image._native, conversion));
+function convertColorSync(...args) {
+  return wrap(cv, cv.convertColor, args);
 }
 
 function decodeImage(...args) {
-  return new Promise((resolve, reject) => {
-    cv.decodeImage(...args, (err, image) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(new Matrix(image));
-      }
-    });
-  });
+  return asyncWrap(cv, cv.decodeImage, args);
 }
 
 function decodeImageSync(...args) {
-  return new Matrix(cv.decodeImage(...args));
+  return wrap(cv, cv.decodeImage, args);
 }
 
-function writeImage(image, filePath) {
-  return new Promise((resolve, reject) => {
-    cv.writeImage(image && image._native, filePath, (err) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve();
-      }
-    });
-  });
+function writeImage(...args) {
+  return asyncWrap(cv, cv.writeImage, args);
 }
 
-function writeImageSync(image, filePath) {
-  return cv.writeImage(image && image._native, filePath);
+function writeImageSync(...args) {
+  return wrap(cv, cv.writeImage, args);
 }
 
-function encodeImage(image, type) {
-  return new Promise((resolve, reject) => {
-    cv.encodeImage(image && image._native, type, (err, buffer) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(buffer);
-      }
-    });
-  });
+function encodeImage(...args) {
+  return asyncWrap(cv, cv.encodeImage, args);
 }
 
-function encodeImageSync(image, type) {
-  return cv.encodeImage(image && image._native, type);
+function encodeImageSync(...args) {
+  return wrap(cv, cv.encodeImage, args);
 }
 
-function resize(image, sizeSpec) {
-  return new Promise((resolve, reject) => {
-    cv.resize(image && image._native, sizeSpec, (err, image) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(new Matrix(image));
-      }
-    });
-  });
+function resize(...args) {
+  return asyncWrap(cv, cv.resize, args);
 }
 
-function resizeSync(image, sizeSpec) {
-  return new Matrix(cv.resize(image && image._native, sizeSpec));
+function resizeSync(...args) {
+  return wrap(cv, cv.resize, args);
 }
 
 function warpAffine(...args) {
-  return new Promise((resolve, reject) => {
-    args[0] = args[0] && args[0]._native;
-    args[1] = args[1] && args[1]._native;
-
-    cv.warpAffine(...args, (err, image) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(new Matrix(image));
-      }
-    });
-  });
+  return asyncWrap(cv, cv.warpAffine, args);
 }
 
 function warpAffineSync(...args) {
-  args[0] = args[0] && args[0]._native;
-  args[1] = args[1] && args[1]._native;
-  return new Matrix(cv.warpAffine(...args));
+  return wrap(cv, cv.warpAffine, args);
 }
 
-function flipUpDown(image) {
-  return new Promise((resolve, reject) => {
-    cv.flipUpDown(image && image._native, (err, image) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(new Matrix(image));
-      }
-    });
-  });
+function flipUpDown(...args) {
+  return asyncWrap(cv, cv.flipUpDown, args);
 }
 
-function flipUpDownSync(image) {
-  return new Matrix(cv.flipUpDown(image && image._native));
+function flipUpDownSync(...args) {
+  return wrap(cv, cv.flipUpDown, args);
 }
 
-function flipLeftRight(image) {
-  return new Promise((resolve, reject) => {
-    cv.flipLeftRight(image && image._native, (err, image) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(new Matrix(image));
-      }
-    });
-  });
+function flipLeftRight(...args) {
+  return asyncWrap(cv, cv.flipLeftRight, args);
 }
 
-function flipLeftRightSync(image) {
-  return new Matrix(cv.flipLeftRight(image && image._native));
+function flipLeftRightSync(...args) {
+  return wrap(cv, cv.flipLeftRight, args);
 }
 
 function rotate(image, opt) {
@@ -326,6 +241,55 @@ function rotateShared(image, opt) {
     transformation: rot,
     warpOptions: warpOpt
   };
+}
+
+function wrap(obj, method, args, returnValue) {
+  let wrappedArgs = wrapMatrices(args);
+  let result = method.apply(obj, wrappedArgs);
+
+  if (returnValue) {
+    result = returnValue;
+  }
+
+  if (result instanceof cv.Matrix) {
+    return matrix(result);
+  } else {
+    return result;
+  }
+}
+
+function asyncWrap(obj, method, args, returnValue) {
+  return new Promise((resolve, reject) => {
+    let wrappedArgs = wrapMatrices(args);
+
+    wrappedArgs.push((err, result) => {
+      if (returnValue) {
+        result = returnValue;
+      }
+
+      if (err) {
+        reject(err);
+      } else {
+        if (result instanceof cv.Matrix) {
+          resolve(matrix(result));
+        } else {
+          resolve(result);
+        }
+      }
+    });
+
+    method.apply(obj, wrappedArgs);
+  });
+}
+
+function wrapMatrices(args) {
+  return args.map(arg => {
+    if (arg instanceof Matrix) {
+      return arg.native;
+    } else {
+      return arg;
+    }
+  });
 }
 
 module.exports = {

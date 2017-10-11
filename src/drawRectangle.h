@@ -27,7 +27,7 @@ NAN_METHOD(drawRectangle) {
 
   auto image = Matrix::get(info[0]);
   auto rect = getRect<int>(info[1]);
-  auto color = getColor(info[2]);
+  auto color = getColor<int>(info[2]);
   auto width = 1;
 
   if (info.Length() >= 4 && info[3]->IsNumber()) {

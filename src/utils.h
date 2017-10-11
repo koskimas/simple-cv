@@ -76,11 +76,12 @@ inline bool isColor(v8::Local<v8::Value> val) {
     && getValue(val, "blue")->IsNumber();
 }
 
-inline cv::Scalar getColor(v8::Local<v8::Value> val) {
+template<typename T>
+inline cv::Scalar_<T> getColor(v8::Local<v8::Value> val) {
   if (has(val, "alpha")) {
-    return cv::Scalar(get<int>(val, "blue"), get<int>(val, "green"), get<int>(val, "red"), get<int>(val, "alpha"));
+    return cv::Scalar_<T>(get<T>(val, "blue"), get<T>(val, "green"), get<T>(val, "red"), get<T>(val, "alpha"));
   } else {
-    return cv::Scalar(get<int>(val, "blue"), get<int>(val, "green"), get<int>(val, "red"));
+    return cv::Scalar_<T>(get<T>(val, "blue"), get<T>(val, "green"), get<T>(val, "red"));
   }
 }
 

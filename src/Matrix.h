@@ -20,8 +20,12 @@ public:
 
     Nan::SetPrototypeMethod(tpl, "toArray", toArray);
     Nan::SetPrototypeMethod(tpl, "toBuffers", toBuffers);
+    Nan::SetPrototypeMethod(tpl, "toBuffer", toBuffer);
     Nan::SetPrototypeMethod(tpl, "crop", crop);
     Nan::SetPrototypeMethod(tpl, "set", set);
+    Nan::SetPrototypeMethod(tpl, "clone", clone);
+    Nan::SetPrototypeMethod(tpl, "add", add);
+    Nan::SetPrototypeMethod(tpl, "mul", mul);
 
     Nan::SetAccessor(tpl->InstanceTemplate(), Nan::New("height").ToLocalChecked(), getHeight);
     Nan::SetAccessor(tpl->InstanceTemplate(), Nan::New("width").ToLocalChecked(), getWidth);
@@ -215,24 +219,20 @@ private:
         type = ImageTypeFloat;
       }
 
-      if (hasData && type == ImageTypeBGR) {
-        Nan::ThrowError("type cv.ImageType.BGR is not yet supported with array data");
-        return;
-      }
-
       Matrix *matrix = new Matrix(width, height, type);
       cv::Mat mat = matrix->mat();
 
       if (hasData) {
         auto data = getValue(args, "data").As<v8::Array>();
-        auto length = data->Length();
+        auto size = width * height;
 
-        if (length != static_cast<unsigned>(width * height)) {
-          Nan::ThrowError("args.data must contain args.width * args.height elements");
+        if (data->Length() != static_cast<unsigned>(width * height * mat.channels())) {
+          delete matrix;
+          Nan::ThrowError("args.data must contain args.width * args.height * channels elements");
           return;
         }
 
-        for (unsigned i = 0; i < length; ++i) {
+        for (int i = 0; i < size; ++i) {
           auto item = Nan::Get(data, i).ToLocalChecked();
 
           if (!item->IsNumber()) {
@@ -243,8 +243,18 @@ private:
 
           if (type == ImageTypeFloat) {
             mat.at<double>(i) = Nan::To<double>(item).FromJust();
-          } else {
+          } else if (type == ImageTypeGray) {
             mat.at<uchar>(i) = static_cast<uchar>(Nan::To<int>(item).FromJust());
+          } else if (type == ImageTypeBGR) {
+            auto blue = Nan::Get(data, i).ToLocalChecked();
+            auto green = Nan::Get(data, i + size).ToLocalChecked();
+            auto red = Nan::Get(data, i + 2 * size).ToLocalChecked();
+
+            mat.at<cv::Vec3b>(i) = cv::Vec3b(
+              static_cast<uchar>(Nan::To<int>(blue).FromJust()),
+              static_cast<uchar>(Nan::To<int>(green).FromJust()),
+              static_cast<uchar>(Nan::To<int>(red).FromJust())
+            );
           }
         }
       }
@@ -304,20 +314,21 @@ private:
   static NAN_METHOD(toArray) {
     Matrix* mat = Nan::ObjectWrap::Unwrap<Matrix>(info.Holder());
 
-    auto type = mat->mat().type();
-    auto length = mat->mat().total();
-    auto arr = v8::Array::New(info.GetIsolate(), static_cast<int>(length));
+    auto self = mat->mat();
+    auto type = self.type();
+    auto size = self.cols * self.rows;
+    auto arr = v8::Array::New(info.GetIsolate(), static_cast<int>(self.total()));
 
-    if (type == ImageTypeBGR || type == ImageTypeBGRA) {
-      Nan::ThrowError("toArray is not implemented for cv.ImageType.BGR(A) yet");
-      return;
-    }
-
-    for (unsigned i = 0; i < length; ++i) {
-      if (type == ImageTypeFloat) {
-        Nan::Set(arr, i, Nan::New(mat->mat().at<double>(i)));
-      } else if (type == ImageTypeGray) {
-        Nan::Set(arr, i, Nan::New(mat->mat().at<uchar>(i)));
+    for (int c = 0; c < self.channels(); ++c) {
+      for (int i = 0; i < size; ++i) {
+        if (type == ImageTypeFloat) {
+          Nan::Set(arr, i, Nan::New(self.at<double>(i)));
+        } else if (type == ImageTypeGray) {
+          Nan::Set(arr, i, Nan::New(self.at<uchar>(i)));
+        } else {
+          auto pixel = self.at<cv::Vec3b>(i);
+          Nan::Set(arr, c * size + i, Nan::New(pixel[c]));
+        }
       }
     }
 
@@ -441,6 +452,21 @@ private:
     }
   }
 
+  static NAN_METHOD(toBuffer) {
+    cv::Mat self = Nan::ObjectWrap::Unwrap<Matrix>(info.Holder())->mat();
+
+    auto size = static_cast<unsigned>(self.total());
+    auto data = reinterpret_cast<char *>(self.data);
+    auto buffer = Nan::CopyBuffer(data, size).ToLocalChecked();
+
+    info.GetReturnValue().Set(buffer);
+  }
+
+  static NAN_METHOD(clone) {
+    Matrix* mat = Nan::ObjectWrap::Unwrap<Matrix>(info.Holder());
+    info.GetReturnValue().Set(Matrix::create(mat->mat().clone()));
+  }
+
   static NAN_METHOD(set) {
     cv::Mat self = Nan::ObjectWrap::Unwrap<Matrix>(info.Holder())->mat();
 
@@ -532,6 +558,102 @@ private:
       return self(cropRect).clone();
     }, [](const cv::Mat& result) {
       return Matrix::create(result);
+    });
+  }
+
+  static NAN_METHOD(add) {
+    cv::Mat self = Nan::ObjectWrap::Unwrap<Matrix>(info.Holder())->mat();
+
+    if (info.Length() < 1 || info.Length() > 2) {
+      Nan::ThrowError("expected at least one argument (matrix|color|number) and at most two arguments (matrix|color|number, callback)");
+      return;
+    }
+
+    int argType = 0;
+    double numberArg = 0;
+    cv::Mat matArg;
+    cv::Scalar colorArg;
+
+    if (Matrix::isMatrix(info[0])) {
+      matArg = Matrix::get(info[0]);
+
+      if (matArg.cols != self.cols || matArg.rows != self.rows || matArg.type() != self.type()) {
+        Nan::ThrowError("if the first argument is a matrix, it must have the same size and type as the receiver matrix");
+        return;
+      }
+
+      argType = 0;
+    } else if (info[0]->IsNumber()) {
+      numberArg = Nan::To<double>(info[0]).FromJust();
+      argType = 1;
+    } else if (isColor(info[0])) {
+      colorArg = getColor<double>(info[0]);
+      argType = 2;
+    } else {
+      Nan::ThrowError("first argument must be a matrix, a number or a color");
+      return;
+    }
+
+    maybeAsyncOp<int>(info, [self, argType, numberArg, matArg, colorArg]() {
+      if (argType == 0) {
+        self += matArg;
+      } else if (argType == 1) {
+        self += numberArg;
+      } else {
+        self += colorArg;
+      }
+
+      return 0;
+    }, [](const int&) {
+      return Nan::Null();
+    });
+  }
+
+  static NAN_METHOD(mul) {
+    cv::Mat self = Nan::ObjectWrap::Unwrap<Matrix>(info.Holder())->mat();
+
+    if (info.Length() < 1 || info.Length() > 2) {
+      Nan::ThrowError("expected at least one argument (matrix|color|number) and at most two arguments (matrix|color|number, callback)");
+      return;
+    }
+
+    int argType = 0;
+    double numberArg = 0;
+    cv::Mat matArg;
+    cv::Scalar colorArg;
+
+    if (Matrix::isMatrix(info[0])) {
+      matArg = Matrix::get(info[0]);
+
+      if (matArg.cols != self.cols || matArg.rows != self.rows || matArg.type() != self.type()) {
+        Nan::ThrowError("if the first argument is a matrix, it must have the same size and type as the receiver matrix");
+        return;
+      }
+
+      argType = 0;
+    } else if (info[0]->IsNumber()) {
+      numberArg = Nan::To<double>(info[0]).FromJust();
+      argType = 1;
+    } else if (isColor(info[0])) {
+      colorArg = getColor<double>(info[0]);
+      argType = 2;
+    } else {
+      Nan::ThrowError("first argument must be a matrix, a number or a color");
+      return;
+    }
+
+    maybeAsyncOp<int>(info, [self, argType, numberArg, matArg, colorArg]() {
+      if (argType == 0) {
+        cv::multiply(self, matArg, self);
+      } else if (argType == 1) {
+        self *= numberArg;
+      } else {
+        cv::multiply(self, colorArg, self);
+      }
+
+      return 0;
+    }, [](const int&) {
+      return Nan::Null();
     });
   }
 

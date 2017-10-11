@@ -33,7 +33,7 @@ NAN_METHOD(drawLine) {
   auto image = Matrix::get(info[0]);
   auto point1 = getPoint<int>(info[1]);
   auto point2 = getPoint<int>(info[2]);
-  auto color = getColor(info[3]);
+  auto color = getColor<int>(info[3]);
   auto width = 1;
 
   if (info.Length() >= 5 && info[4]->IsNumber()) {

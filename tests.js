@@ -133,7 +133,7 @@ describe('simple-cv', () => {
           data: [1, 2, 3, 4, 5]
         });
       }).to.throwException(err => {
-        expect(err.message).to.equal('args.data must contain args.width * args.height elements');
+        expect(err.message).to.equal('args.data must contain args.width * args.height * channels elements');
       });
     });
 
@@ -246,6 +246,227 @@ describe('simple-cv', () => {
           matrix.cropSync({x: 0, y: 0, width: 4, height: 4})
         }).to.throwException(err => {
           expect(err.message).to.equal('crop (x=0..4, y=0..4) goes outside the matrix bounds (w=3, h=3)');
+        });
+      });
+
+    });
+
+    describe('Matrix.clone', () => {
+
+      it('should clone a matrix', () => {
+        const target = new cv.Matrix([
+          [1, 2, 3],
+          [4, 5, 6],
+          [7, 8, 9]
+        ]);
+
+        const source = new cv.Matrix([
+          [11, 22],
+          [33, 44],
+        ]);
+
+        const clone = target.clone();
+
+        expect(clone.width).to.equal(target.width);
+        expect(clone.height).to.equal(target.height);
+        expect(clone.type).to.equal(target.type);
+
+        clone.setSync(source, {x: 1, y: 0});
+
+        expect(clone.toArray()).to.eql([
+          1, 11, 22,
+          4, 33, 44,
+          7, 8,  9
+        ]);
+
+        expect(target.toArray()).to.eql([
+          1, 2, 3,
+          4, 5, 6,
+          7, 8, 9
+        ]);
+      });
+
+    });
+
+    describe('Matrix.add', () => {
+
+      it('should add a number', () => {
+        const target = cv.matrix([
+          [1, 2, 3],
+          [4, 5, 6],
+          [7, 8, 9]
+        ]);
+
+        return target.add(1.5).then(result => {
+          expect(result.toArray()).to.eql([
+            2.5, 3.5, 4.5,
+            5.5, 6.5, 7.5,
+            8.5, 9.5, 10.5
+          ]);
+        });
+      });
+
+      it('should add a number to a grayscale matrix', () => {
+        const target = cv.matrix({
+          width: 3,
+          height: 3,
+          type: cv.ImageType.Gray,
+          data: [
+            1, 2, 3,
+            4, 5, 6,
+            7, 8, 9
+          ]
+        });
+
+        return target.add(1.4).then(result => {
+          expect(result.toArray()).to.eql([
+            2, 3, 4,
+            5, 6, 7,
+            8, 9, 10
+          ]);
+        });
+      });
+
+      it('should add a matrix', () => {
+        const target = cv.matrix([
+          [1, 2, 3],
+          [4, 5, 6],
+          [7, 8, 9]
+        ]);
+
+        const other = cv.matrix([
+          [1, 1, 1],
+          [2, 2, 2],
+          [3, 3, 3]
+        ]);
+
+        return target.add(other).then(result => {
+          expect(result.toArray()).to.eql([
+            2,  3,  4,
+            6,  7,  8,
+            10, 11, 12
+          ]);
+        });
+      });
+
+      describe('Matrix.addSync', () => {
+
+        it('should add a number', () => {
+          let target = cv.matrix([
+            [1, 2, 3],
+            [4, 5, 6],
+            [7, 8, 9]
+          ]);
+
+          const result = target.addSync(1.5);
+
+          expect(result).to.equal(target);
+          expect(result.toArray()).to.eql([
+            2.5, 3.5, 4.5,
+            5.5, 6.5, 7.5,
+            8.5, 9.5, 10.5
+          ]);
+        });
+
+      });
+
+      describe('Matrix.mul', () => {
+
+        it('should multiply by a number', () => {
+          const target = cv.matrix([
+            [1, 2, 3],
+            [4, 5, 6],
+            [7, 8, 9]
+          ]);
+
+          return target.mul(1.5).then(result => {
+            expect(result.toArray()).to.eql([
+              1.5,  3,   4.5,
+              6,    7.5, 9,
+              10.5, 12,  13.5
+            ]);
+          });
+        });
+
+        it('should multiply a grayscale matrix by a number', () => {
+          const target = cv.matrix({
+            width: 3,
+            height: 3,
+            type: cv.ImageType.Gray,
+            data: [
+              1, 2, 3,
+              4, 5, 6,
+              7, 8, 9
+            ]
+          });
+
+          return target.mul(1.6).then(result => {
+            expect(result.toArray()).to.eql([
+              2,  3,  5,
+              6,  8,  10,
+              11, 13, 14
+            ]);
+          });
+        });
+
+        it('should multiply by a matrix', () => {
+          const target = cv.matrix([
+            [1, 2, 3],
+            [4, 5, 6],
+            [7, 8, 9]
+          ]);
+
+          const other = cv.matrix([
+            [1, 1, 1],
+            [2, 2, 2],
+            [3, 3, 3]
+          ]);
+
+          return target.mul(other).then(result => {
+            expect(result.toArray()).to.eql([
+              1,  2,  3,
+              8,  10, 12,
+              21, 24, 27
+            ]);
+          });
+        });
+
+      });
+
+      it('should multiply by a color', () => {
+        const target = cv.matrix({
+          width: 3,
+          height: 3,
+          type: cv.ImageType.BGR,
+          data: [
+            1, 1, 1,
+            2, 2, 2,
+            3, 3, 3,
+
+            4, 4, 4,
+            5, 5, 5,
+            6, 6, 6,
+
+            7, 7, 7,
+            8, 8, 8,
+            9, 9, 9,
+          ]
+        });
+
+        return target.mul({blue: 2, green: 3, red: 0.6}).then(result => {
+          expect(result.toArray()).to.eql([
+            2, 2, 2,
+            4, 4, 4,
+            6, 6, 6,
+
+            12, 12, 12,
+            15, 15, 15,
+            18, 18, 18,
+
+            4, 4, 4,
+            5, 5, 5,
+            5, 5, 5,
+          ]);
         });
       });
 
@@ -407,6 +628,21 @@ describe('simple-cv', () => {
         });
       });
 
+    });
+
+  });
+
+  describe('Matrix.toBuffer', () => {
+
+    it('should return the matrix data as a single buffer', () => {
+      const matrix = cv.matrix({width: 2, height: 2, data: [5, 6, 7, 8], type: cv.ImageType.Gray});
+      const buffer = matrix.toBuffer();
+
+      expect(buffer.length).to.equal(4);
+      expect(buffer[0]).to.equal(5);
+      expect(buffer[1]).to.equal(6)
+      expect(buffer[2]).to.equal(7)
+      expect(buffer[3]).to.equal(8)
     });
 
   });
@@ -904,7 +1140,7 @@ describe('simple-cv', () => {
       }).then(() => {
         done(new Error('should not get here'));
       }).catch(err => {
-        expect(err.message).to.equal('second argument (sizeSpec) must be an integer or an object');
+        expect(err.message).to.equal('second argument (sizeSpec) must be a valid sizeSpec object');
         done();
       }).catch(done);
     });

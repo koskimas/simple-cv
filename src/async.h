@@ -50,22 +50,36 @@ private:
 };
 
 template<typename T>
-inline void asyncOp(v8::Local<v8::Function> callback, std::function<T(void)> worker, std::function<v8::Local<v8::Value>(T)> outputMapper) {
+inline void asyncOp(
+    const Nan::FunctionCallbackInfo<v8::Value>& info,
+    std::function<T(void)> workFn,
+    std::function<v8::Local<v8::Value>(T)> outputMapper) {
+
   Nan::HandleScope scope;
 
-  Nan::AsyncQueueWorker(new AsyncOp<T>(
-      worker,
-      outputMapper,
-      new Nan::Callback(callback)
-  ));
+  auto callback = info[info.Length() - 1].As<v8::Function>();
+  auto worker = new AsyncOp<T>(
+    workFn,
+    outputMapper,
+    new Nan::Callback(callback)
+  );
+
+  // If this is a method call, makes sure `this` is not garbage collected
+  // before the work is done.
+  worker->SaveToPersistent("this", info.This());
+  Nan::AsyncQueueWorker(worker);
 }
 
 template<typename T>
-inline void maybeAsyncOp(const Nan::FunctionCallbackInfo<v8::Value>& info, std::function<T(void)> worker, std::function<v8::Local<v8::Value>(T)> outputMapper) {
+inline void maybeAsyncOp(
+    const Nan::FunctionCallbackInfo<v8::Value>& info,
+    std::function<T(void)> worker,
+    std::function<v8::Local<v8::Value>(T)> outputMapper) {
+
   Nan::HandleScope scope;
 
   if (info.Length() > 0 && info[info.Length() - 1]->IsFunction()) {
-    asyncOp<T>(info[info.Length() - 1].As<v8::Function>(), worker, outputMapper);
+    asyncOp<T>(info, worker, outputMapper);
   } else {
     try {
       T output = worker();

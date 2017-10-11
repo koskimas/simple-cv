@@ -1,17 +1,17 @@
 # simple-cv
 
-Asynchronous [OpenCV](http://opencv.org/) bindings for [Node.js](https://nodejs.org/en/) with a simple promise based API 
+Asynchronous [OpenCV](http://opencv.org/) bindings for [Node.js](https://nodejs.org/en/) with a simple promise based API
 and good documentation.
 
 `simple-cv` replicates the good parts of the OpenCV API but replaces the really crappy ones with something
 better. For example instead of a `flip` method that takes a number literal -1, 0 or 1 to indicate flip direction
-`simple-cv` has `flipLeftRight` and `flipUpDown` methods. 
+`simple-cv` has `flipLeftRight` and `flipUpDown` methods.
 
-All heavy operations are performed in a worker thread pool and the results a returned back asynchronously using 
+All heavy operations are performed in a worker thread pool and the results a returned back asynchronously using
 promises.
 
 All methods have a synchronous equivalent. Just append `Sync` to the function name.
- 
+
 The documentation is full of examples but here's one to get you started:
 
 ```js
@@ -19,10 +19,10 @@ const cv = require('simple-cv');
 
 const example = async () => {
   let image = await cv.readImage('/path/to/some/image.png');
-  
+
   image = await cv.rotate(image, 20);
   image = await cv.resize(image, {width: 400});
-  
+
   return image;
 };
 
@@ -32,7 +32,7 @@ example().then(image => {
 });
 ```
 
-This project is still in its infancy and only a small part of the OpenCV API is wrapped. 
+This project is still in its infancy and only a small part of the OpenCV API is wrapped.
 More stuff is added all the time.
 
 <br/>
@@ -90,7 +90,7 @@ The basic data type used to represent images, transformation matrices etc. Wraps
 | -------- | ------------------------- | --------------------------
 | width    | number                    | The width of the matrix.
 | height   | number                    | The height of the matrix.
-| type     | [`ImageType`](#imagetype) | The type of the matrix. Default = `ImageType.Gray`. 
+| type     | [`ImageType`](#imagetype) | The type of the matrix. Default = `ImageType.Gray`.
 
 ```js
 let matrix = new cv.Matrix(10, 20, cv.ImageType.Float);
@@ -113,7 +113,7 @@ matrix = cv.matrix(10, 20, cv.ImageType.Float);
 ```js
 let matrix = new cv.Matrix({
   width: 3,
-  height: 2, 
+  height: 2,
   type: cv.ImageType.Float,
   data: [
     1, 2, 3,
@@ -124,7 +124,7 @@ let matrix = new cv.Matrix({
 // The same using the cv.matrix shorthand:
 matrix = cv.matrix({
   width: 3,
-  height: 2, 
+  height: 2,
   type: cv.ImageType.Float,
   data: [
     1, 2, 3,
@@ -260,7 +260,7 @@ The `Matrix` class has the following instance properties.
 | -------- | ------------------------- | --------------------------
 | width    | number                    | The width of the matrix.
 | height   | number                    | The height of the matrix.
-| type     | [`ImageType`](#imagetype) | The type of the matrix. 
+| type     | [`ImageType`](#imagetype) | The type of the matrix.
 
 <br/><br/><br/>
 
@@ -363,6 +363,41 @@ Shows an image (or any matrix) using OpenCV's `cv::imshow`.
 ```js
 cv.showImage('Pretty picture', image);
 cv.waitKey();
+```
+
+<br/>
+
+### cv.drawRectangle(matrix, rect, color, lineWidth)
+
+Draws a rectagle to a matrix using `cv::rectangle`.
+
+| argument   | type                      | description
+| ---------- | ------------------------- | ------------------------------------
+| matrix     | [`Matrix`](#matrix)       | The canvas
+| rect       | [`Rectangle`](#rectangle) | The rectangle to draw
+| color      | [`Color`](#color)         | The color
+| lineWidth  | number                    | The line width (optional, defaults to 1)
+
+```js
+cv.drawRectangle(image, {x: 1, y: 10, width: 15, height: 30}, {red: 255, green: 0, blue: 0});
+```
+
+<br/>
+
+### cv.drawLine(matrix, point1, point2, color, lineWidth)
+
+Draws a line to a matrix using `cv::line`.
+
+| argument   | type                      | description
+| ---------- | ------------------------- | ------------------------------------
+| matrix     | [`Matrix`](#matrix)       | The canvas
+| point1     | [`Point`](#point)         | Starting point of the line
+| point2     | [`Point`](#point)         | Ending point of the line
+| color      | [`Color`](#color)         | The color
+| lineWidth  | number                    | The line width (optional, defaults to 1)
+
+```js
+cv.drawLine(image, {x: 1, y: 1}, {x: 10, y: 10}, {red: 255, green: 0, blue: 0});
 ```
 
 <br/>
@@ -513,9 +548,9 @@ const flipped = await cv.flipUpDown(image);
 
 | value | description
 | ------| -------------------------------------------------------------------------------------
-| Gray  | Gray scale image. The underlying OpenCV data type is `CV_8UC1`.         
-| BGR   | BGR color image. The underlying OpenCV data type is `CV_8UC3`.   
-| BGRA  | BGRA color image with an alpha channel. The underlying OpenCV data type is `CV_8UC4`.  
+| Gray  | Gray scale image. The underlying OpenCV data type is `CV_8UC1`.
+| BGR   | BGR color image. The underlying OpenCV data type is `CV_8UC3`.
+| BGRA  | BGRA color image with an alpha channel. The underlying OpenCV data type is `CV_8UC4`.
 | Float | Floating point matrix. The underlying OpenCV data type is `CV_64FC1`
 
 ```js
@@ -528,7 +563,7 @@ const Gray = cv.ImageType.Gray;
 
 | value | description
 | ------| -------------
-| PNG   | PNG format.         
+| PNG   | PNG format.
 | JPEG  | JPEG format.
 
 ```js
@@ -543,7 +578,7 @@ Describes how to fill the empty space created by some operations like `rotate`.
 
 | value      | description
 | ---------- | -------------
-| Replicate  | `aaaaaa|abcdefgh|hhhhhhh`    
+| Replicate  | `aaaaaa|abcdefgh|hhhhhhh`
 | Reflect    | `fedcba|abcdefgh|hgfedcb`
 | Reflect101 | `gfedcb|abcdefgh|gfedcba`
 | Wrap       | `cdefgh|abcdefgh|abcdefg`
@@ -559,7 +594,7 @@ const Replicate = cv.BorderType.Replicate;
 
 | value | description
 | ------| -------------
-| Gray  | Gray channel   
+| Gray  | Gray channel
 | Red   | Red channel
 | Green | Green channel
 | Blue  | Blue channel
@@ -582,7 +617,8 @@ const Gray = cv.Channel.Gray;
 
 ### Rectangle
 
-A javascript object with properties `x`, `y`, `width` and `height`.
+Any javascript object with properties `x`, `y`, `width` and `height`. Note that the [`Rect`](#rect) class
+instances have these properties and can be passed as `Rectangles`.
 
 | property | type   | description
 | -------- | ------ | -------------------------
@@ -622,21 +658,21 @@ const point = {
 
 ### Color
 
-A javascript object with properties `r`, `g`, `b` and `a`.
+A javascript object with properties `red`, `green`, `blue` and optionally `alpha`.
 
 | property | type    | description
 | -------- | ------- | --------------------------
-| r        | integer | red component
-| g        | integer | green component
-| b        | integer | blue component
-| a        | integer | alpha component
+| red      | integer | red component
+| green    | integer | green component
+| blue     | integer | blue component
+| alpha    | integer | alpha component (optional)
 
 ```js
 const color = {
-  r: 0,
-  g: 255,
-  b: 128,
-  a: 255
+  red: 0,
+  green: 255,
+  blue: 128,
+  alpha: 255
 };
 ```
 

@@ -673,10 +673,6 @@ describe('simple-cv', () => {
 
         const [b, g, r] = matrix.toBuffers().map(it => it.data);
 
-        expect(b.length).to.equal(9);
-        expect(g.length).to.equal(9);
-        expect(r.length).to.equal(9);
-
         expect(_.range(b.length).map(it => b[it])).eql([1, 1, 1, 2, 2, 2, 3, 3, 3]);
         expect(_.range(g.length).map(it => g[it])).eql([4, 4, 4, 5, 5, 5, 6, 6, 6]);
         expect(_.range(r.length).map(it => r[it])).eql([7, 7, 7, 8, 8, 8, 9, 9, 9]);
@@ -697,6 +693,35 @@ describe('simple-cv', () => {
       expect(buffer[1]).to.equal(6)
       expect(buffer[2]).to.equal(7)
       expect(buffer[3]).to.equal(8)
+    });
+
+    it('should work with BGR data', () => {
+      const matrix = cv.matrix({
+        width: 3,
+        height: 3,
+        type: cv.ImageType.BGR,
+        data: [
+          1, 1, 1,
+          2, 2, 2,
+          3, 3, 3,
+
+          4, 4, 4,
+          5, 5, 5,
+          6, 6, 6,
+
+          7, 7, 7,
+          8, 8, 8,
+          9, 9, 9
+        ]
+      });
+
+      const data = matrix.toBuffer();
+
+      expect(_.range(data.length).map(it => data[it])).eql([
+        1, 4, 7, 1, 4, 7, 1, 4, 7,
+        2, 5, 8, 2, 5, 8, 2, 5, 8,
+        3, 6, 9, 3, 6, 9, 3, 6, 9
+      ]);
     });
 
   });

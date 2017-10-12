@@ -455,7 +455,7 @@ private:
   static NAN_METHOD(toBuffer) {
     cv::Mat self = Nan::ObjectWrap::Unwrap<Matrix>(info.Holder())->mat();
 
-    auto size = static_cast<unsigned>(self.total());
+    auto size = static_cast<unsigned>(self.total() * self.channels());
     auto data = reinterpret_cast<char *>(self.data);
     auto buffer = Nan::CopyBuffer(data, size).ToLocalChecked();
 

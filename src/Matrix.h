@@ -378,10 +378,10 @@ private:
         auto blueData = node::Buffer::Data(blue);
         auto blueChannel = Nan::New<v8::Object>();
 
-        for (unsigned i = 0, j = 0; i < size; i += 3, ++j) {
-          blueData[j] = data[i];
-          greenData[j] = data[i + 1];
-          redData[j] = data[i + 2];
+        for (unsigned i = 0; i < size; ++i) {
+          blueData[i] = data[3 * i];
+          greenData[i] = data[3 * i + 1];
+          redData[i] = data[3 * i + 2];
         }
 
         Nan::Set(redChannel, Nan::New("data").ToLocalChecked(), red);
@@ -417,11 +417,11 @@ private:
         auto alphaData = node::Buffer::Data(blue);
         auto alphaChannel = Nan::New<v8::Object>();
 
-        for (unsigned i = 0, j = 0; i < size; i += 4, ++j) {
-          blueData[j] = data[i];
-          greenData[j] = data[i + 1];
-          redData[j] = data[i + 2];
-          alphaData[j] = data[i + 3];
+        for (unsigned i = 0; i < size; ++i) {
+          blueData[i] = data[4 * i];
+          greenData[i] = data[4 * i + 1];
+          redData[i] = data[4 * i + 2];
+          alphaData[i] = data[4 * i + 3];
         }
 
         Nan::Set(redChannel, Nan::New("data").ToLocalChecked(), red);

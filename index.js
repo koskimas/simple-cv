@@ -201,6 +201,30 @@ function flipLeftRightSync(...args) {
   return wrap(cv, cv.flipLeftRight, args);
 }
 
+function split(...args) {
+  return asyncWrap(cv, cv.split, args).then(unwrapMatrices);
+}
+
+function splitSync(...args) {
+  return unwrapMatrices(wrap(cv, cv.split, args));
+}
+
+function merge(...args) {
+  return asyncWrap(cv, cv.merge, args);
+}
+
+function mergeSync(...args) {
+  return wrap(cv, cv.merge, args);
+}
+
+function lookup(...args) {
+  return asyncWrap(cv, cv.lookup, args);
+}
+
+function lookupSync(...args) {
+  return wrap(cv, cv.lookup, args);
+}
+
 function rotate(image, opt) {
   return new Promise((resolve, reject) => {
     const {transformation, warpOptions} = rotateShared(image, opt);
@@ -292,6 +316,16 @@ function wrapMatrices(args) {
   });
 }
 
+function unwrapMatrices(args) {
+  return args.map(arg => {
+    if (arg instanceof cv.Matrix) {
+      return matrix(arg);
+    } else {
+      return arg;
+    }
+  });
+}
+
 module.exports = {
   Matrix,
   ImageType,
@@ -326,5 +360,11 @@ module.exports = {
   flipUpDown,
   flipUpDownSync,
   flipLeftRight,
-  flipLeftRightSync
+  flipLeftRightSync,
+  split,
+  splitSync,
+  merge,
+  mergeSync,
+  lookup,
+  lookupSync
 };

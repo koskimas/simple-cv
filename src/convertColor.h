@@ -16,7 +16,7 @@ NAN_METHOD(convertColor) {
   }
 
   if (!info[1]->IsInt32()) {
-    Nan::ThrowError("second argument (conversion) must be one of [cv.Conversion.BGRToGray, cv.Conversion.GrayToBGR]");
+    Nan::ThrowError("second argument (conversion) must be one of the values in cv.Conversion");
     return;
   }
 

@@ -27,6 +27,10 @@ static const int BorderTypeConstant = cv::BORDER_CONSTANT;
 
 static const int ConversionBGRToGray = cv::COLOR_BGR2GRAY;
 static const int ConversionGrayToBGR = cv::COLOR_GRAY2BGR;
+static const int ConversionBGRToYCrCb = cv::COLOR_BGR2YCrCb;
+static const int ConversionYCrCbToBGR =  cv::COLOR_YCrCb2BGR;
+static const int ConversionBGRToHSV = cv::COLOR_BGR2HSV;
+static const int ConversionHSVToBGR =  cv::COLOR_HSV2BGR;
 
 NAN_MODULE_INIT(initConstants) {
   auto ImageType = Nan::New<v8::Object>();
@@ -58,6 +62,10 @@ NAN_MODULE_INIT(initConstants) {
 
   Nan::Set(Conversion, Nan::New("BGRToGray").ToLocalChecked(), Nan::New(ConversionBGRToGray));
   Nan::Set(Conversion, Nan::New("GrayToBGR").ToLocalChecked(), Nan::New(ConversionGrayToBGR));
+  Nan::Set(Conversion, Nan::New("BGRToYCrCb").ToLocalChecked(), Nan::New(ConversionBGRToYCrCb));
+  Nan::Set(Conversion, Nan::New("YCrCbToBGR").ToLocalChecked(), Nan::New(ConversionYCrCbToBGR));
+  Nan::Set(Conversion, Nan::New("BGRToHSV").ToLocalChecked(), Nan::New(ConversionBGRToHSV));
+  Nan::Set(Conversion, Nan::New("HSVToBGR").ToLocalChecked(), Nan::New(ConversionHSVToBGR));
 
   Nan::Set(target, Nan::New("ImageType").ToLocalChecked(), ImageType);
   Nan::Set(target, Nan::New("EncodeType").ToLocalChecked(), EncodeType);

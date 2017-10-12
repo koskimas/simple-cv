@@ -12,6 +12,9 @@
 #include "drawRectangle.h"
 #include "drawLine.h"
 #include "convertColor.h"
+#include "split.h"
+#include "merge.h"
+#include "lookup.h"
 
 NAN_MODULE_INIT(Init) {
   initConstants(target);
@@ -32,6 +35,9 @@ NAN_MODULE_INIT(Init) {
   Nan::SetMethod(target, "drawRectangle", drawRectangle);
   Nan::SetMethod(target, "drawLine", drawLine);
   Nan::SetMethod(target, "convertColor", convertColor);
+  Nan::SetMethod(target, "split", split);
+  Nan::SetMethod(target, "merge", merge);
+  Nan::SetMethod(target, "lookup", lookup);
 }
 
 NODE_MODULE(simple_cv, Init)

@@ -1,8 +1,10 @@
+const _ = require('lodash');
 const cv = require('./');
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const expect = require('expect.js');
+const spline = require('cubic-spline');
 
 describe('simple-cv', () => {
   const invalidImagePath = __dirname + '/files/notanimage.jpg';
@@ -433,6 +435,27 @@ describe('simple-cv', () => {
 
       });
 
+      describe('Matrix.mulSync', () => {
+
+        it('should multiply by a number', () => {
+          const target = cv.matrix([
+            [1, 2, 3],
+            [4, 5, 6],
+            [7, 8, 9]
+          ]);
+
+          const result = target.mulSync(1.5);
+
+          expect(result).to.equal(target);
+          expect(result.toArray()).to.eql([
+            1.5,  3,   4.5,
+            6,    7.5, 9,
+            10.5, 12,  13.5
+          ]);
+        });
+
+      });
+
       it('should multiply by a color', () => {
         const target = cv.matrix({
           width: 3,
@@ -626,6 +649,37 @@ describe('simple-cv', () => {
           expect(buffers[0].data[2]).to.equal(7);
           expect(buffers[0].data[3]).to.equal(8);
         });
+      });
+
+      it('should work with BGR data', () => {
+        const matrix = cv.matrix({
+          width: 3,
+          height: 3,
+          type: cv.ImageType.BGR,
+          data: [
+            1, 1, 1,
+            2, 2, 2,
+            3, 3, 3,
+
+            4, 4, 4,
+            5, 5, 5,
+            6, 6, 6,
+
+            7, 7, 7,
+            8, 8, 8,
+            9, 9, 9
+          ]
+        });
+
+        const [b, g, r] = matrix.toBuffers().map(it => it.data);
+
+        expect(b.length).to.equal(9);
+        expect(g.length).to.equal(9);
+        expect(r.length).to.equal(9);
+
+        expect(_.range(b.length).map(it => b[it])).eql([1, 1, 1, 2, 2, 2, 3, 3, 3]);
+        expect(_.range(g.length).map(it => g[it])).eql([4, 4, 4, 5, 5, 5, 6, 6, 6]);
+        expect(_.range(r.length).map(it => r[it])).eql([7, 7, 7, 8, 8, 8, 9, 9, 9]);
       });
 
     });
@@ -1561,6 +1615,287 @@ describe('simple-cv', () => {
         0, 0, 0,
         3, 4, 0,
         1, 2, 0
+      ]);
+    });
+
+  });
+
+  describe('cv.split', () => {
+
+    it('should split matrix into channels', () => {
+      const matrix = cv.matrix({
+        width: 3,
+        height: 3,
+        type: cv.ImageType.BGR,
+        data: [
+          1, 1, 1,
+          2, 2, 2,
+          3, 3, 3,
+
+          4, 4, 4,
+          5, 5, 5,
+          6, 6, 6,
+
+          7, 7, 7,
+          8, 8, 8,
+          9, 9, 9
+        ]
+      });
+
+      return cv.split(matrix).then(channels => {
+        expect(channels).to.have.length(3);
+
+        expect(channels[0]).to.be.a(cv.Matrix);
+        expect(channels[1]).to.be.a(cv.Matrix);
+        expect(channels[2]).to.be.a(cv.Matrix);
+
+        expect(channels[0].toArray()).to.eql([
+          1, 1, 1,
+          2, 2, 2,
+          3, 3, 3
+        ]);
+
+        expect(channels[1].toArray()).to.eql([
+          4, 4, 4,
+          5, 5, 5,
+          6, 6, 6
+        ]);
+
+        expect(channels[2].toArray()).to.eql([
+          7, 7, 7,
+          8, 8, 8,
+          9, 9, 9
+        ]);
+      });
+    });
+
+  });
+
+  describe('cv.splitSync', () => {
+
+    it('should split matrix into channels', () => {
+      const matrix = cv.matrix({
+        width: 3,
+        height: 3,
+        type: cv.ImageType.BGR,
+        data: [
+          1, 1, 1,
+          2, 2, 2,
+          3, 3, 3,
+
+          4, 4, 4,
+          5, 5, 5,
+          6, 6, 6,
+
+          7, 7, 7,
+          8, 8, 8,
+          9, 9, 9
+        ]
+      });
+
+      const channels =  cv.splitSync(matrix);
+      expect(channels).to.have.length(3);
+
+      expect(channels[0]).to.be.a(cv.Matrix);
+      expect(channels[1]).to.be.a(cv.Matrix);
+      expect(channels[2]).to.be.a(cv.Matrix);
+
+      expect(channels[0].type).to.equal(cv.ImageType.Gray);
+      expect(channels[1].type).to.equal(cv.ImageType.Gray);
+      expect(channels[2].type).to.equal(cv.ImageType.Gray);
+
+      expect(channels[0].toArray()).to.eql([
+        1, 1, 1,
+        2, 2, 2,
+        3, 3, 3
+      ]);
+
+      expect(channels[1].toArray()).to.eql([
+        4, 4, 4,
+        5, 5, 5,
+        6, 6, 6
+      ]);
+
+      expect(channels[2].toArray()).to.eql([
+        7, 7, 7,
+        8, 8, 8,
+        9, 9, 9
+      ]);
+    });
+
+  });
+
+  describe('cv.merge', () => {
+
+    it('should merge channels into a matrix', () => {
+      const matrix = cv.matrix({
+        width: 3,
+        height: 3,
+        type: cv.ImageType.BGR,
+        data: [
+          1, 1, 1,
+          2, 2, 2,
+          3, 3, 3,
+
+          4, 4, 4,
+          5, 5, 5,
+          6, 6, 6,
+
+          7, 7, 7,
+          8, 8, 8,
+          9, 9, 9
+        ]
+      });
+
+      return cv.split(matrix).then(channels => {
+        return cv.merge(...channels);
+      }).then(merged => {
+        expect(merged.type).to.equal(cv.ImageType.BGR);
+        expect(merged.toArray()).to.eql([
+          1, 1, 1,
+          2, 2, 2,
+          3, 3, 3,
+
+          4, 4, 4,
+          5, 5, 5,
+          6, 6, 6,
+
+          7, 7, 7,
+          8, 8, 8,
+          9, 9, 9
+        ]);
+      });
+    });
+
+  });
+
+  describe('cv.mergeSync', () => {
+
+    it('should merge channels into a matrix', () => {
+      const matrix = cv.matrix({
+        width: 3,
+        height: 3,
+        type: cv.ImageType.BGR,
+        data: [
+          1, 1, 1,
+          2, 2, 2,
+          3, 3, 3,
+
+          4, 4, 4,
+          5, 5, 5,
+          6, 6, 6,
+
+          7, 7, 7,
+          8, 8, 8,
+          9, 9, 9
+        ]
+      });
+
+      const channels = cv.splitSync(matrix);
+      const merged = cv.mergeSync(...channels);
+
+      expect(merged.type).to.equal(cv.ImageType.BGR);
+      expect(merged.toArray()).to.eql([
+        1, 1, 1,
+        2, 2, 2,
+        3, 3, 3,
+
+        4, 4, 4,
+        5, 5, 5,
+        6, 6, 6,
+
+        7, 7, 7,
+        8, 8, 8,
+        9, 9, 9
+      ]);
+    });
+
+  });
+
+  describe('cv.lookup', () => {
+
+    it('should map a matrix through a lookup table', () => {
+      const matrix = cv.matrix({
+        width: 3,
+        height: 3,
+        type: cv.ImageType.Gray,
+        data: [
+          0,   32,  64,
+          96,  128, 160,
+          192, 224, 255
+        ]
+      });
+
+      const x = [0, 32, 64, 96, 128, 160, 192, 224, 255];
+      const y = [1, 10, 20, 40, 80,  120, 180, 220, 240]
+
+      const lookupTable = cv.matrix({
+        width: 256,
+        height: 1,
+        type: cv.ImageType.Gray,
+        data: _.range(256).map(it => spline(it, x, y))
+      });
+
+      const lu = lookupTable.toArray();
+
+      return cv.lookup(matrix, lookupTable).then(result => {
+        expect(result.type).to.equal(cv.ImageType.Gray);
+
+        expect(matrix.toArray()).to.eql([
+          0,   32,  64,
+          96,  128, 160,
+          192, 224, 255
+        ]);
+
+        expect(result.toArray()).to.eql([
+          lu[0],   lu[32],  lu[64],
+          lu[96],  lu[128], lu[160],
+          lu[192], lu[224], lu[255]
+        ]);
+      });
+    });
+
+  });
+
+  describe('cv.lookupSync', () => {
+
+    it('should map a matrix through a lookup table', () => {
+      const matrix = cv.matrix({
+        width: 3,
+        height: 3,
+        type: cv.ImageType.Gray,
+        data: [
+          0,   32,  64,
+          96,  128, 160,
+          192, 224, 255
+        ]
+      });
+
+      const x = [0, 32, 64, 96, 128, 160, 192, 224, 255];
+      const y = [1, 10, 20, 40, 80,  120, 180, 220, 240]
+
+      const lookupTable = cv.matrix({
+        width: 256,
+        height: 1,
+        type: cv.ImageType.Gray,
+        data: _.range(256).map(it => spline(it, x, y))
+      });
+
+      const lu = lookupTable.toArray();
+      const result = cv.lookupSync(matrix, lookupTable);
+
+      expect(result.type).to.equal(cv.ImageType.Gray);
+
+      expect(matrix.toArray()).to.eql([
+        0,   32,  64,
+        96,  128, 160,
+        192, 224, 255
+      ]);
+
+      expect(result.toArray()).to.eql([
+        lu[0],   lu[32],  lu[64],
+        lu[96],  lu[128], lu[160],
+        lu[192], lu[224], lu[255]
       ]);
     });
 

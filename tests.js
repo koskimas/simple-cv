@@ -1930,36 +1930,44 @@ describe('simple-cv', () => {
 
     it('should blur an image', () => {
       const matrix = cv.matrix([
-        [0, 0, 0],
-        [0, 1, 0],
-        [0, 0, 0]
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 10, 0, 0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0]
       ]);
 
       return Promise.all([
-        cv.gaussianBlur(matrix, {kernelSize: 3}),
-        cv.gaussianBlur(matrix, {kernelSize: {width: 3, height: 1}}),
-        cv.gaussianBlur(matrix, {kernelSize: 3, sigma: 0.6}),
+        cv.gaussianBlur(matrix, {kernelSize: 5}),
+        cv.gaussianBlur(matrix, {kernelSize: {width: 5, height: 1}}),
+        cv.gaussianBlur(matrix, {kernelSize: 5, sigma: 0.8}),
       ]).then(([res1, res2, res3]) => {
         res1 = res1.toArray().map(it => Math.round(it * 10));
         res2 = res2.toArray().map(it => Math.round(it * 10));
         res3 = res3.toArray().map(it => Math.round(it * 10));
 
         expect(res1).to.eql([
-          0, 2, 0,
-          2, 6, 2,
-          0, 2, 0
+          2, 3, 5,  3, 2,
+          3, 6, 9,  6, 3,
+          5, 9, 14, 9, 5,
+          3, 6, 9,  6, 3,
+          2, 3, 5,  3, 2
         ]);
 
         expect(res2).to.eql([
-          0, 0, 0,
-          2, 8, 2,
-          0, 0, 0
+          0,  0,  0,  0,  0,
+          0,  0,  0,  0,  0,
+          13, 25, 38, 25, 13,
+          0,  0,  0,  0,  0,
+          0,  0,  0,  0,  0
         ]);
 
         expect(res3).to.eql([
-          1, 2, 1,
-          2, 4, 2,
-          1, 2, 1
+          0, 1,  2,  1,  0,
+          1, 5,  11, 5,  1,
+          2, 11, 25, 11, 2,
+          1, 5,  11, 5,  1,
+          0, 1,  2,  1,  0
         ]);
       });
     });
@@ -1975,8 +1983,8 @@ describe('simple-cv', () => {
         [0, 0, 0]
       ]);
 
-      let res1 = cv.gaussianBlurSync(matrix, {kernelSize: 3});
-      let res2 = cv.gaussianBlurSync(matrix, {kernelSize: {width: 3, height: 1}});
+      let res1 = cv.gaussianBlurSync(matrix, {kernelSize: 3, xSigma: 0.5, ySigma: 0.5});
+      let res2 = cv.gaussianBlurSync(matrix, {kernelSize: {width: 3, height: 1}, sigma: 0.5});
       let res3 = cv.gaussianBlurSync(matrix, {kernelSize: 3, sigma: 0.6});
 
       res1 = res1.toArray().map(it => Math.round(it * 10));

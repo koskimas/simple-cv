@@ -18,8 +18,8 @@ NAN_METHOD(gaussianBlur) {
 
   auto image = Matrix::get(info[0]);
   auto kernelSize = cv::Size(3, 3);
-  auto xSigma = 0.5;
-  auto ySigma = 0.5;
+  auto xSigma = 0.0;
+  auto ySigma = 0.0;
 
   if (info[1]->IsObject() && !info[1]->IsFunction()) {
     auto opt = info[1];

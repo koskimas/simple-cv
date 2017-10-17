@@ -225,6 +225,14 @@ function lookupSync(...args) {
   return wrap(cv, cv.lookup, args);
 }
 
+function gaussianBlur(...args) {
+  return asyncWrap(cv, cv.gaussianBlur, args);
+}
+
+function gaussianBlurSync(...args) {
+  return wrap(cv, cv.gaussianBlur, args);
+}
+
 function rotate(image, opt) {
   return new Promise((resolve, reject) => {
     const {transformation, warpOptions} = rotateShared(image, opt);
@@ -366,5 +374,7 @@ module.exports = {
   merge,
   mergeSync,
   lookup,
-  lookupSync
+  lookupSync,
+  gaussianBlur,
+  gaussianBlurSync
 };

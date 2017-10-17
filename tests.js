@@ -1926,6 +1926,84 @@ describe('simple-cv', () => {
 
   });
 
+  describe('cv.gaussianBlur', () => {
+
+    it('should blur an image', () => {
+      const matrix = cv.matrix([
+        [0, 0, 0],
+        [0, 1, 0],
+        [0, 0, 0]
+      ]);
+
+      return Promise.all([
+        cv.gaussianBlur(matrix, {kernelSize: 3}),
+        cv.gaussianBlur(matrix, {kernelSize: {width: 3, height: 1}}),
+        cv.gaussianBlur(matrix, {kernelSize: 3, sigma: 0.6}),
+      ]).then(([res1, res2, res3]) => {
+        res1 = res1.toArray().map(it => Math.round(it * 10));
+        res2 = res2.toArray().map(it => Math.round(it * 10));
+        res3 = res3.toArray().map(it => Math.round(it * 10));
+
+        expect(res1).to.eql([
+          0, 2, 0,
+          2, 6, 2,
+          0, 2, 0
+        ]);
+
+        expect(res2).to.eql([
+          0, 0, 0,
+          2, 8, 2,
+          0, 0, 0
+        ]);
+
+        expect(res3).to.eql([
+          1, 2, 1,
+          2, 4, 2,
+          1, 2, 1
+        ]);
+      });
+    });
+
+  });
+
+  describe('cv.gaussianBlurSync', () => {
+
+    it('should blur an image', () => {
+      const matrix = cv.matrix([
+        [0, 0, 0],
+        [0, 1, 0],
+        [0, 0, 0]
+      ]);
+
+      let res1 = cv.gaussianBlurSync(matrix, {kernelSize: 3});
+      let res2 = cv.gaussianBlurSync(matrix, {kernelSize: {width: 3, height: 1}});
+      let res3 = cv.gaussianBlurSync(matrix, {kernelSize: 3, sigma: 0.6});
+
+      res1 = res1.toArray().map(it => Math.round(it * 10));
+      res2 = res2.toArray().map(it => Math.round(it * 10));
+      res3 = res3.toArray().map(it => Math.round(it * 10));
+
+      expect(res1).to.eql([
+        0, 2, 0,
+        2, 6, 2,
+        0, 2, 0
+      ]);
+
+      expect(res2).to.eql([
+        0, 0, 0,
+        2, 8, 2,
+        0, 0, 0
+      ]);
+
+      expect(res3).to.eql([
+        1, 2, 1,
+        2, 4, 2,
+        1, 2, 1
+      ]);
+    });
+
+  });
+
   describe('cv.convertColor', () => {
 
     it('should convert colors', () => {

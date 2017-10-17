@@ -49,6 +49,20 @@ inline cv::Point_<T> getPoint(v8::Local<v8::Value> val) {
   return cv::Point_<T>(get<T>(val, "x"), get<T>(val, "y"));
 }
 
+inline bool isSize(v8::Local<v8::Value> val) {
+  Nan::HandleScope scope;
+  return val->IsObject()
+     && has(val, "width")
+     && has(val, "height")
+     && getValue(val, "width")->IsNumber()
+     && getValue(val, "height")->IsNumber();
+}
+
+template<typename T>
+inline cv::Size_<T> getSize(v8::Local<v8::Value> val) {
+  return cv::Size_<T>(get<T>(val, "width"), get<T>(val, "height"));
+}
+
 inline bool isRect(v8::Local<v8::Value> val) {
   Nan::HandleScope scope;
   return has(val, "x")

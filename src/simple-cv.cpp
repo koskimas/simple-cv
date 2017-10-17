@@ -15,6 +15,7 @@
 #include "split.h"
 #include "merge.h"
 #include "lookup.h"
+#include "gaussianBlur.h"
 
 NAN_MODULE_INIT(Init) {
   initConstants(target);
@@ -38,6 +39,7 @@ NAN_MODULE_INIT(Init) {
   Nan::SetMethod(target, "split", split);
   Nan::SetMethod(target, "merge", merge);
   Nan::SetMethod(target, "lookup", lookup);
+  Nan::SetMethod(target, "gaussianBlur", gaussianBlur);
 }
 
 NODE_MODULE(simple_cv, Init)

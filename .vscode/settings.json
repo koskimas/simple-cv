@@ -33,6 +33,8 @@
     "istream": "cpp",
     "locale": "cpp",
     "thread": "cpp",
-    "tuple": "cpp"
+    "tuple": "cpp",
+    "cctype": "cpp",
+    "cstddef": "cpp"
   }
 }

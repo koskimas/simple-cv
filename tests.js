@@ -2012,6 +2012,88 @@ describe('simple-cv', () => {
 
   });
 
+  describe('cv.colorTemperature', () => {
+
+    it('should change the color temperature of the image', () => {
+      const matrix = cv.matrix({
+        width: 3,
+        height: 3,
+        type: cv.ImageType.BGR,
+        data: [
+          0,   0,   0,
+          128, 128, 128,
+          255, 255, 255,
+
+          0,   0,   0,
+          128, 128, 128,
+          255, 255, 255,
+
+          0,   0,   0,
+          128, 128, 128,
+          255, 255, 255
+        ]
+      });
+
+      return cv.colorTemperature(matrix, 4000, 1).then(result => {
+        expect(result.toArray()).to.eql([
+          0,   0,   0,
+          95,  95,  95,
+          255, 255, 255,
+
+          0,   0,   0,
+          124, 124, 124,
+          255, 255, 255,
+
+          0,   0,   0,
+          161, 161, 161,
+          255, 255, 255
+        ]);
+      });
+    });
+
+  });
+
+  describe('cv.colorTemperatureSync', () => {
+
+    it('should change the color temperature of the image', () => {
+      const matrix = cv.matrix({
+        width: 3,
+        height: 3,
+        type: cv.ImageType.BGR,
+        data: [
+          0,   0,   0,
+          128, 128, 128,
+          255, 255, 255,
+
+          0,   0,   0,
+          128, 128, 128,
+          255, 255, 255,
+
+          0,   0,   0,
+          128, 128, 128,
+          255, 255, 255
+        ]
+      });
+
+      const result =  cv.colorTemperatureSync(matrix, 4000, 1);
+
+      expect(result.toArray()).to.eql([
+        0,   0,   0,
+        95,  95,  95,
+        255, 255, 255,
+
+        0,   0,   0,
+        124, 124, 124,
+        255, 255, 255,
+
+        0,   0,   0,
+        161, 161, 161,
+        255, 255, 255
+      ]);
+    });
+
+  });
+
   describe('cv.convertColor', () => {
 
     it('should convert colors', () => {

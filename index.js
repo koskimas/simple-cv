@@ -233,6 +233,14 @@ function gaussianBlurSync(...args) {
   return wrap(cv, cv.gaussianBlur, args);
 }
 
+function colorTemperature(...args) {
+  return asyncWrap(cv, cv.colorTemperature, args);
+}
+
+function colorTemperatureSync(...args) {
+  return wrap(cv, cv.colorTemperature, args);
+}
+
 function rotate(image, opt) {
   return new Promise((resolve, reject) => {
     const {transformation, warpOptions} = rotateShared(image, opt);
@@ -376,5 +384,7 @@ module.exports = {
   lookup,
   lookupSync,
   gaussianBlur,
-  gaussianBlurSync
+  gaussianBlurSync,
+  colorTemperature,
+  colorTemperatureSync
 };

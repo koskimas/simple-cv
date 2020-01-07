@@ -3,6 +3,7 @@
 
 #include <nan.h>
 #include <opencv2/opencv.hpp>
+#include <functional>
 
 template<typename T>
 class AsyncOp : public Nan::AsyncWorker {
